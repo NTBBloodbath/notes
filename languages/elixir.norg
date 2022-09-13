@@ -1,0 +1,1192 @@
+@document.meta
+title: elixir
+description: Elixir learning notes
+authors: NTBBloodbath
+categories: [
+  elixir
+  programming language
+  functional programming
+]
+created: 2022-09-13
+updated: 2022-09-13
+version: 0.0.13
+@end
+
+#comment
+Use `:Neorg toc split` to open TOC and `q` to close it.
+Press `CR` in any TOC header to navigate between them.
+
+= TOC
+
+* Elixir notes
+  These are my notes I made while learning the Elixir programming language.
+
+  These notes requires Elixir and Python tree-sitter parsers to be installed for a more pleasant
+  experience while reading/editing them (syntax highlighting, indent, etc). This is completely
+  optional and up to you, tho.
+
+  > You can `:Neorg tangle current-file` to copy code blocks contents into files.
+
+** What is Elixir?
+   Elixir is a dynamically-typed functional compiled programming language built upon the Erlang VM
+   /and behaves like an interpreted language/. With this we can create low-latency, scalable,
+   maintainable and fault-tolerant systems.
+
+   It is also used successfully in other domains such as IoT, web development, data processing and
+   so on.
+
+** Basics
+   As we said before, Elixir can be interpreted or compiled. We are going to use /"interpreted"/
+   code throughout these notes.
+
+   To use /"intepreted"/ code we can make use of `.exs` extension. This is meant for scripting and
+   tests, you will surely want to use `.ex` extension for compiled code in any other case.
+
+*** Hello, world
+    Elixir is a language based in modules (we are going to talk about this later), so print function
+    resides into `IO` module and is called `puts`, meaning `IO.puts` is the correct way to refer to
+    the printing function.
+
+    So, creating our hello world is as simple as writing that function down:
+    #tangle hello.exs
+    @code elixir
+    IO.puts("Hello, Elixir!")
+    @end
+
+    And we can run it by running `elixir hello.exs` in our terminal emulator.
+
+    > *NOTE*: strings are delimited by double quotes in Elixir, do not use single quotes. They have
+    >       a completely different meaning in Elixir.
+
+*** Iex
+    Like Python, Elixir has a shell in which you can interactively experiment (a REPL). You launch
+    it by running `iex` in your terminal emulator.
+
+    This shell has a number of features that might help you in your Elixir-related endeavors:
+    - *Autocompletion*: `String.<tab>` will list all members of the `String` module.
+    - *Documentation*: `h String.trim` shows you all information regarding the `trim` function.
+    - *Loader*: `c "filename.exs"` loads a Elixir Script source code file.
+    - *Playground*: You can execute code from the shell, which is great for quick testing.
+    - *Verbose*: `i` lets you inspect values in detail.
+
+    More information is available [here]{https://hexdocs.pm/iex/IEx.Helpers.html#content}.
+
+*** Data Types
+    Elixir has all the regular programming language data types along with a few special ones of its
+    own:
+
+**** Integers
+     Integers are positive and negative numbers without any decimal points. They can also be written
+     in binary, octal and hexadecimal form.
+
+**** Floats
+     Just like other programming languages, floats are numeric values that *can* store decimals
+     values.
+
+**** Booleans
+     Boolean variables can store either `true` or `false`.
+
+**** Strings
+     Strings, similar to other languages, are sets of characters marked by double quotes (`"`).
+
+**** Atoms
+     Atoms in Elixir are constants whose values are the same as their names. They are denoted by a
+     `:` prefix. The constants `true`, `false` and `nil` are also atoms. These are special constants
+     that can be used without the `:` operator.
+
+     > Atoms are also called symbols in other programming languages like Lisp.
+
+**** Tuples
+     Tuples have the same function as lists but, like arrays, they are stored contiguously in memory,
+     which makes them faster. Tuples are marked by curly brackets (`{}`).
+
+**** Lists
+     Lists are a number of values of the same /or different/ data types stored in the same variable.
+     Lists are stored as linked lists. Lists are marked by square brackets (`[]`).
+
+**** Maps
+     Maps are associative containers (data structures that associate values with keys). In Elixir,
+     `Map` literals take the form:
+     @code elixir
+     %{ key1 => val1, key2 => val2, ... }
+     @end
+
+     Note that when keys are atoms, there's an alternative syntax for map literals:
+     @code elixir
+     %{ key1: val1, key2: val2, ... }
+     @end
+
+     > We can compare Elixir `Map` with Python `dict`.
+
+*** Operators
+**** Arithmetic
+     Elixir supports the basic operators (`+`, `-`, `*`, `/`).
+
+     > *NOTE*: `/` will always return a float. You have to use `div` function for integer division.
+
+**** Boolean
+     Elixir provides `||`, `&&` and `!` boolean operators (logical operators). These support any
+     types:
+     @code elixir
+     -20 || true  # => -20
+
+     false || 42  # => 42
+
+     !false       # => true
+     @end
+
+     There are three additional operators whose first argument /must/ be a boolean value:
+     - `or`
+     - `and`
+
+**** Comparison
+     Elixir comes with all the comparison operators we are used to:
+     - `==`
+     - `!=`
+     - `===`
+     - `!==`
+     - `<`
+     - `>`
+     - `<=`
+     - `>=`
+
+     > For *strict* comparison of integers and floats, use `===`.
+
+*** Strings interpolation
+    In case you need to build a string that contains a variable value you can use interpolation.
+    For example, in a function `greet` that takes a parameter `name` and returns `Hello, <name>`.
+
+    Again, Elixir adopted Ruby's syntax for strings interpolation. That means, strings
+    interpolation is made by using `#{foo}` where `foo` is your variable name.
+    #tangle interpolation.exs
+    @code elixir
+    defmodule DatePrinter do
+      def format(day, month, year) do
+        "#{day}-#{month}-#{year}"
+      end
+    end
+    @end
+
+*** Strings concatenation
+    Strings contatenation uses the `<>` operator:
+    @code elixir
+    name = "John"
+
+    "Hello, " <> name  # => "Hello, John"
+    @end
+
+*** Collections
+**** Lists
+     Elixir implements list collections as linked lists. This means that accessing the list length
+     is an operation that will run in linear time (`O(n)`). For this reason, it is typically faster
+     to prepend than to append:
+     @code elixir
+     list = [3.14, :pie, "Apple"]
+     [3.14, :pie, "Apple"]
+
+     # Prepending (fast)
+     ["π" | list]
+     ["π", 3.14, :pie, "Apple"]
+
+     # Appending (slow)
+     list ++ ["Cherry"]
+     [3.14, :pie, "Apple", "Cherry"]
+     @end
+
+***** Lists concatenation
+      Lists concatenation uses the `++/2` operator:
+      @code elixir
+      [1, 2] ++ [3, 4, 1]  # => [1, 2, 3, 4, 1]
+      @end
+
+***** Lists subtraction
+      Lists subtraction is provided via the `--/2` operator:
+      @code elixir
+      ["foo", :bar, 42] -- [42, "bar"]  # => ["foo", :bar]
+      @end
+
+      > *NOTE*: It is safe to subtract a missing value.
+
+      Be mindful of duplicate values. For every element on the right, the first occurrence of it
+      gets removed from the left:
+      @code elixir
+      [1,2,2,3,2,3] -- [1,2,3,2]  # => [2, 3]
+      @end
+
+      > *IMPORTANT*: Lists subtraction uses strict comparison to match the values.
+
+***** Head and Tail
+      When using lists, it is common to work with a list’s head and tail. The head is the list’s
+      first element, while the tail is a list containing the remaining elements. Elixir provides two
+      helpful functions, `hd` and `tl`, for working with these parts:
+      @code elixir
+      hd [3.14, :pie, "Apple"]  # => 3.14
+
+      tl [3.14, :pie, "Apple"]  # => [:pie, "Apple"]
+      @end
+
+      In addition to the aforementioned functions, you can use pattern matching and the cons
+      operator (`|`) to split a list into head and tail.
+      @code elixir
+      [head | tail] = [3.14, :pie, "Apple"]
+      # => [3.14, :pie, "Apple"]
+
+      head
+      # => 3.14
+
+      tail
+      # => [:pie, "Apple"]
+      @end
+
+**** Tuples
+     It is common for tuples to be used as a mechanism to return additional information from
+     functions. The usefulness of this will be more apparent when we get into pattern matching:
+     @code elixir
+     File.read("path/to/existing/file")
+     # => {:ok, "... contents ..."}
+
+     File.read("path/to/unknown/file")
+     # => {:error, :enoent}
+     @end
+
+**** Keyword lists
+     Keyword lists and maps are the associative collections of Elixir. In Elixir, a keyword list is
+     a special list of two-element tuples whose first element is an atom. They share performance
+     with lists:
+     @code elixir
+     [foo: "bar", hello: "world"]
+     # => [foo: "bar", hello: "world"]
+
+     [{:foo, "bar"}, {:hello, "world"}]
+     # => [foo: "bar", hello: "world"]
+     @end
+
+     The three characteristics of keyword lists highlight their importance:
+     - Keys are atoms.
+     - Keys are ordered.
+     - Keys do not have to be unique.
+
+     > *NOTE*: For these reasons, keyword lists are most commonly used to pass options to
+     >       functions.
+
+**** Maps
+     In Elixir, maps are the “go-to” key-value store. Unlike keyword lists, they allow keys of any
+     type and are un-ordered.
+     @code elixir
+     map = %{:foo => "bar", "hello" => :world}
+     # => %{:foo => "bar", "hello" => :world}
+
+     map[:foo]
+     # => "bar"
+     @end
+
+     > *NOTE*: Variables are also allowed as map keys.
+
+     If a duplicate is added to a map, it will replace the former value:
+     @code elixir
+     %{:foo => "bar", :foo => "hello world"}
+     # => %{foo: "hello world"}
+     @end
+
+     Another interesting property of maps is that they provide their own syntax for updates. Note
+     that this creates a new map:
+     @code elixir
+     map = %{foo: "bar", hello: "world"}
+     # => %{foo: "bar", hello: "world"}
+
+     %{map | foo: "baz"}
+     # => %{foo: "baz", hello: "world"}
+     @end
+
+     > *NOTE*: This syntax only works for updating a key that already exists in the map! If the key
+     >       does not exist, a `KeyError` will be raised.
+
+     To create a new key, use `Map.put/3` instead:
+     @code elixir
+     map = %{hello: "world"}
+     # => %{hello: "world"}
+
+     Map.put(map, :foo, "baz")
+     # => %{foo: "baz", hello: "world"}
+     @end
+
+*** Functions
+    As Elixir is a purely functional programming language, functions are a first class citizen. So
+    it makes sense it is one of the first things you learn.
+
+    Elixir requires functions to be part of a module. It is similar to C++ namespaces as modules are
+    merely a way of bundling related functions together.
+
+    We declare modules using `defmodule` followed by the module name and functions using `def`
+    followed by the function name and its arguments. For example:
+    #tangle funcs.exs
+    @code elixir
+    defmodule Temperature do
+      def kelvin_to_celsius(t) do
+        t - 273.15
+      end
+
+      def celsius_to_kelvin(t) do
+        t + 273.15
+      end
+    end
+    @end
+
+    *Notes*:
+    ~ Elixir is a dynamically typed language like Python and JavaScript, that is the reason why
+      there is no mention of parameter types nor return type.
+    ~ As Elixir is a functional language, there is no `return`. Functions will automatically return
+      the value of the last evaluated expression. In other words, it does have an implicit return.
+
+**** First class functions
+     As we said before, functions are a first class citizen in Elixir, but what does that means?
+
+     First we have to clarify something: functions are not strangers to you, as any programming
+     language features them. However, their rank can vary.
+
+     There are three "social classes", inventively called the first, the second and the third class
+     (pretty creative, isn't it?). The table below shows the differences between each:
+
+     ┌─────────────────────┬───────┬────────┬───────┐
+     │                     │ First │ Second │ Third │
+     ├─────────────────────┼───────┼────────┼───────┤
+     │ Passed as parameter │  yes  │  yes   │  no   │
+     ├─────────────────────┼───────┼────────┼───────┤
+     │ Returned as value   │  yes  │  no    │  no   │
+     ├─────────────────────┼───────┼────────┼───────┤
+     │ Stored in variable  │  yes  │  no    │  no   │
+     └─────────────────────┴───────┴────────┴───────┘
+
+     > *NOTE*: First, second and third class are just labels and are not really important. What
+     >       matters is what capabilities each language concept has. Intuitively, you can think of
+     >       first class citizens as things you can "hold" or "move around."
+
+     To explain all different ways to call a function, consider the code below:
+     @code elixir
+     defmodule Hello do
+       def hello do
+         IO.puts("hello")
+       end
+     end
+
+     # Have func refer to hello
+     # This can be translated into something like
+     # "I am referring to hello function from Hello module that receives 0 parameters"
+     func = &Hello.hello/0
+
+     # Call hello directly
+     Hello.hello()
+
+     # Call via func
+     func.()
+     @end
+
+     Note the difference in function calling: if you refer to the function directly by name, the
+     familiar `()` syntax works. If, however, the function is stored in a variable (such as func),
+     the slightly longer syntax `.()` needs to be used.
+
+***** Returning functions
+      Say you have a `bar` function:
+      @code elixir
+      defmodule Foo do
+        def bar(x) do
+          ...
+        end
+      end
+      @end
+
+      If you want to "pick up" `bar` as if it were a value, you need to use a special syntax in
+      Elixir, namely `&Foo.bar/1`. The `&` operator here indicates that you are referring to a
+      function and `/1` corresponds to the {# Arity}[arity].
+
+      Once you "hold" the function, you can do whatever you want with it:
+      @code elixir
+      # Store it in a variable
+      bar = &Foo.bar/1
+
+      # Pass it as argument
+      Foo.baz(&Foo.bar/1)
+
+      # Return it
+      def foo do
+        &Foo.bar/1
+      end
+      @end
+
+**** Functions scope
+     By default when you write a function in a module, everyone will be able to call it from outside
+     the module using `Foo.bar`. In other words, `bar` function in `Foo` module is /public/.
+
+     Sometimes, functions will grow in complexity to an uncomfortable size and you will want to
+     split them up, spreading its complexity across multiple functions. However, these helper
+     functions are often not meant for others to use, meaning you did like to keep them private,
+     aka accessible only to other functions in the same module.
+
+     Elixir allows you do to define private functions as follows:
+     @code elixir
+     defmodule Foo do
+       defp bar() do
+         ...
+       end
+     end
+     @end
+
+     And that's it. Just add an extra `p` to `def` when declaring functions to make them private.
+     Now `bar` function is only accessible to other functions in the same module.
+
+**** Lambdas
+     A lambda is a function which you do not bother to give a name to. For this reason, they are
+     also called anonymous functions (which is the term Elixir uses for them). Anonymous functions
+     can be sotred and run in variables.
+
+     The start of these functions are marked by `fn` keyword and the ends are marked by `end`
+     keyword. These anonymous functions can also be passed as arguments for another anonymous
+     function or a named function.
+
+     Anonymous functions syntax is the following:
+     @code elixir
+     sub = fn a, b -> a - b end
+     sub.(10, 5) # -> 5
+     @end
+
+     Where `->` is used to separate the function arguments from the body.
+
+**** Closures
+     Anonymous functions can also access variables that are in scope when the function is defined.
+     This is typically referred to as closures, as they close over their scope. Let's see an
+     example, considering the following code:
+     @code elixir
+     def increment_by_1(x), do: x + 1
+     def increment_by_2(x), do: x + 2
+     def increment_by_3(x), do: x + 3
+     @end
+
+     Now we want to create a function that returns the incrementer function
+     corresponding to its parameter value:
+     @code elixir
+     def create_incrementer(1), do: &increment_by_1/1
+     def create_incrementer(2), do: &increment_by_2/1
+     def create_incrementer(3), do: &increment_by_3/1
+     @end
+
+     This code has some caveats:
+     - It feels a lot like copy pasting. There must be a better way of writing this.
+     - There is no reason to hardcode it and limit ourselves to steps of N. We want to be able to
+       create incrementers for any value of `step`.
+
+     What we want is to be able to write something like
+     @code elixir
+     def create_incrementer(step), do: ...
+     @end
+
+     This is where /closures/ come in. When you create an anonymous function, it can refer to any
+     variables that are accessible to expressions. A concrete example:
+     @code elixir
+     def create_incrementer(step), do: fn x -> x + step end
+     @end
+
+     Here, the anonymous function's body `x + step` refers to two variables:
+     - `x`, which is simply its parameter.
+     - `step`, which is the parameter of its enclosing function.
+
+     Normally, referring to a variable owned by the enclosing function is risky, as they get cleaned
+     up after this enclosing function ends. In our case, `step` should stop existing as soon as
+     `create_incrementer` returns. However, in Elixir, this poses no problem: local variables can
+     continue existing after their enclosing function ends.
+
+     In fact, closures are very intuitive: it's only when you start thinking about the technical
+     aspects of the internal implementation that you realize it could cause trouble. So, contrary to
+     C++, Elixir gives you peace of mind: no need to worry about disappearing stack frames or
+     dangling references. Anonymous functions are free to refer to any variable in scope.
+
+**** Default parameter values
+     Many languages have support for default parameter values. For example, in Python:
+     @code python
+     def advance(count=1):
+       ...
+     @end
+
+     While this might not be a crucial feature of Elixir, you will very probably come across it when
+     perusing the documentation. Note that its unfamiliar syntax *might* be a bit confusing.
+
+     Its syntax is as follows:
+     @code elixir
+     def advance(count \\ 1) do
+       ...
+     end
+     @end
+
+**** Arity
+     While Elixir may not check that the argument types are correct, it does check that the number
+     of arguments matches the definition. That is what we call arity.
+
+     The arity allows for a limited form of overloading: the same function name can be reused by
+     multiple functions as long as they have a different arity.
+     @code elixir
+     def foo, do: ...
+     def foo(x), do: ...
+     def foo(x, y), do: ...
+     @end
+
+     Here, three functions are defined. They happen to have the same name `foo`, but other than
+     that, they are unrelated. The three functions are denoted `foo/0`, `foo/1` and `foo/2`, where
+     `/N` is the number of arguments these functions do receive.
+
+     > A consequence of this approach is that variadic functions cannot be defined in Elixir.
+
+**** Predicates
+     A predicate is a fancy name for a function that returns a boolean value. To improve
+     readability, languages often have a convention of having a function's name hint as its predicate
+     nature.
+
+     Elixir has adopted Ruby's convention for predicates as its names ends in `?`. That means Elixir
+     does use `...?`, e.g. `odd?`.
+
+     Note that this is not always this case, we will take a look at this in the {# Guards}[Guards] section.
+
+*** Guards
+    Elixir has a new concept, namely /guards/. To explain them we will take a look at multiple
+    examples. Let's say we have a `Numbers.abs(n)` function:
+    @code elixir
+    defmodule Numbers do
+      def abs(n) do
+        if n >= 0, do: n, else: -n
+      end
+    end
+    @end
+
+    It seems okay, but what if we were to call `Numbers.abs` on a string value?
+    @code elixir
+    Numbers.abs("1")
+    @end
+
+    Elixir does not check types, so it merrily executes the function's body and tries
+    to compare `"1"` with `0` and will return `1`. Of course, this is not the expected behavior here
+    as we cannot compare strings with numbers, do we?
+
+    That is why Elixir does have guards. A more idiomatic way to add a runtime check that ensures
+    the function argument is of type X.
+
+    > *NOTE*: Do not confuse guards with a static type system, they will lead to runtime errors and
+    >       not compile-time errors.
+
+    For each built-in type, there is a corresponding function that checks whether a value has that
+    type. You can find a list [here]{https://hexdocs.pm/elixir/Kernel.html}.
+
+    Note how, although these functions are predicates, they lack the characterizing question mark at
+    the end of their name. This is to make them stand out: the `is_` prefix indicates the predicate
+    is meant to be used in guards, while "regular" predicates are not allowed there.
+
+    Multiple checks can be combined using the `and` operator:
+    @code elixir
+    def sum(x, y) when is_number(x) and is_number(y) do
+      ...
+    end
+    @end
+
+**** Multiple clauses
+     Guards are much more than a poor man's replacement for type checking. Let's suppose that we
+     have this Python function, where we get a `x` argument and we fork execution inside the
+     function's body based on different values of that argument.
+     @code python
+     def foo(x):
+       if x > 0:
+         # Deal with positive x
+       else:
+         # Deal with negative x
+     @end
+
+     This approach is perfectly acceptable in Elixir, however it does also offer an alternative.
+     @code elixir
+     def foo(x) when is_number(x) and x > 0, do: # Deal with positive x
+       def foo(x) when is_number(x), do: # Deal with negative x
+     @end
+
+     As you can see, Elixir allows you to split the definition of a single function into multiple
+     clauses, each specialized in its very own part of the input. When `foo` is called, the
+     different clauses are looked at in turn. As soon as a clause is found whose guard evaluates to
+     `true`, the search for a matching clause ends and its corresponding body is evaluated. If no
+     such clause is found, an error ensues.
+
+     But that is not all about clauses, we can also match literal values with them. For example:
+     @code elixir
+     def sign(x) when x > 0 , do: 1
+     def sign(x) when x < 0 , do: -1
+     def sign(x) when x == 0, do: 0
+     @end
+
+     Last function declaration seems to be redundant, as we will always return `0` if `x` is equal
+     to `0` so we can easily convert this into a more idiomatic way.
+     @code elixir
+     def sign(0), do: 0
+     @end
+
+     Elixir allows you to mention specific values in the parameter list. This causes the clause to
+     only be considered whenever the corresponding argument is equal to that value.
+
+*** Conditionals
+**** if
+     Elixir `if` conditionals are expressions, unlike in another languages like Python
+     where they are statememts. Therefore, the following code is valid:
+     #tangle if_expr.exs
+     @code elixir
+     IO.puts(if x == y do
+       5
+     else
+       10
+     end)
+     @end
+
+     As you might expect, it prints `5` or `10` depending whether `x` equals `y`.
+
+     Since ifs are expressions and since functions automatically return the value
+     of their last expression, we can write the following:
+     #tangle if.exs
+     @code elixir
+     def foo do
+       if condition do
+         a
+       else
+         b
+       end
+     end
+     @end
+
+**** unless
+     Elixir `unless` conditionals works the same way as Ruby ones, they are used to check for a
+     negative condition. That means, its body will be evaluated if the condition is *not* true.
+     @code elixir
+     unless true do
+       "This will never be seen"
+     end
+     @end
+
+**** cond
+     An if expression is great for dealing with two distinct cases: one in which the condition
+     is true, one in which it isn't. Sometimes there are more than two cases, which traditionally
+     we can deal with by chaining ifs together.
+
+     Elixir would rather have you use a slightly different construct, namely the `cond`. It looks
+     as follows:
+     #tangle cond.exs
+     @code elixir
+     cond do
+       cond1 -> ...
+       cond2 -> ...
+       cond3 -> ...
+       true  -> ...
+     end
+     @end
+
+     The `cond` will look for the first condition that evaluates to true and evaluate the
+     corresponding clause. You can set a default condition by using `true` as last condition.
+
+     > Like `if`, `cond` is an expression.
+
+****  case
+      A `cond` expression is a great `if` replacement if you have to deal with some different cases
+      and you want a more clean code. However, there may be cases where you will want to compare a
+      value against many patterns and that is what `case` does. Compare a value against many
+      patterns until we find a matching one:
+      @code elixir
+      case {1, 2, 3} do
+        {4, 5, 6} ->
+          "This clause won't match"
+        {1, x, 3} ->
+          "This clause will match and bind x to 2 in this clause"
+        _ ->
+          "This clause would match any value (default)"
+      end
+      # => "This clause will match and bind x to 2 in this clause"
+      @end
+
+      > *NOTE*: See how we did not declare `x` anywhere before using that `case` statement, in this
+      >       case `x` will be automatically declared during match.
+
+      In case you want to pattern match against an existing vriable, you need to use the `^`
+      operator:
+      @code elixir
+      x = 1
+      case 10 do
+        ^x -> "Won't match"
+        _ -> "Will match"
+      end
+      # => "Will match"
+      @end
+
+      Clauses also allow extra conditions to be specified via guards:
+      @code elixir
+      case {1, 2, 3} do
+        {1, x, 3} when x > 0 ->
+          "Will match"
+        _ ->
+          "Would match, if guard condition were not satisfied"
+      end
+      # => "Will match"
+      @end
+
+      > *IMPORTANT*: Keep in mind errors in guards do not leak but simply make the guard fail.
+
+*** Scopes
+    Elixir scopes are lexical. This means that it is possible to determine the scope of every
+    identifier only by looking at the source code.
+
+    All variable bindings introduced in a scope are available until the end of that scope. Elixir
+    has a few special forms that treat scopes a little differently (namely `require`, `import`, and
+    `alias`).
+
+    In Elixir there are two types of scope:
+    ~ Top level scope.
+    ~ Function clause scope.
+
+    There are a number of constructs that create new scope:
+    - *modules and module-like structures*: `defmodule`, `defprotocol`, `defimpl`.
+    - *functions*: `fn`, `def`, `defp`.
+    - *comprehensions*: `for`.
+    - `try` block bodies.
+
+    Most of the time user code in Elixir is structured in the following way. At the top level we
+    define modules. Each module contains a number of attributes and function clauses. Inside a
+    function clause there can be arbitrary number of expressions including control flow constructs
+    like `case`, `if`, or `try`:
+    @code elixir
+    abc = "abc"                          # T ─────────────────────┐
+                                         #                        │
+    defmodule M do                       #     M ───────────────┐ │
+      def foo(n) do                      #         F ─────────┐ │ │
+        x = case n do                    #                    │ │ │  - T: top level scope
+          0 -> 1                         #                    │ │ │
+          i when i > 0 -> n * foo(n - 1) #                    │ │ │  - M: module's scope
+          _ -> :undef                    #                    │ │ │
+        end                              #                    │ │ │  - F: function clause scope
+                                         #                    │ │ │
+        for x <- [1,2,3] do              #             C ───┐ │ │ │  - C: comprehension's scope
+          -x                             #                  │ │ │ │
+        end                              #             ─────┘ │ │ │
+      end                                #         ───────────┘ │ │
+    end                                  #     ─────────────────┘ │
+                                         #  ──────────────────────┘
+    @end
+
+    Another way to visualise that structure, schematically:
+
+    > Figure 1
+    ┌────────────────────────────────────────────────────────────┐
+    │ Top level                                                  │
+    │                                                            │
+    │  ┌────────────────────────┐     ┌────────────────────────┐ │
+    │  │ Module                 │     │ Module                 │ │
+    │  │                        │     │                        │ │
+    │  │ ┌────────────────────┐ │     │ ┌────────────────────┐ │ │
+    │  │ │ Function clause    │ │     │ │ Function clause    │ │ │
+    │  │ │                    │ │     │ │                    │ │ │
+    │  │ │ ┌────────────────┐ │ │     │ │ ┌────────────────┐ │ │ │
+    │  │ │ │ Comprehension  │ │ │     │ │ │ Comprehension  │ │ │ │
+    │  │ │ └────────────────┘ │ │     │ │ └────────────────┘ │ │ │
+    │  │ │ ┌────────────────┐ │ │ ... │ │ ┌────────────────┐ │ │ │
+    │  │ │ │ Anon. function │ │ │     │ │ │ Anon. function │ │ │ │
+    │  │ │ └────────────────┘ │ │     │ │ └────────────────┘ │ │ │
+    │  │ │ ┌────────────────┐ │ │     │ │ ┌────────────────┐ │ │ │
+    │  │ │ │ Try block      │ │ │     │ │ │ Try block      │ │ │ │
+    │  │ │ └────────────────┘ │ │     │ │ └────────────────┘ │ │ │
+    │  │ └────────────────────┘ │     │ └────────────────────┘ │ │
+    │  └────────────────────────┘     └────────────────────────┘ │
+    │                                                            │
+    └────────────────────────────────────────────────────────────┘
+
+    When working in the interactive shell, the scope hierarchy is usually flat (“function clause” in
+    the graphic below now refers to anonymous functions instead of named functions):
+
+    > Figure 2
+    ┌───────────────────────┐
+    │ Top level             │
+    │                       │
+    │  ┌─────────────────┐  │
+    │  │ Module          │  │
+    │  └─────────────────┘  │
+    │  ┌─────────────────┐  │
+    │  │ Function clause │  │
+    │  └─────────────────┘  │
+    │  ┌─────────────────┐  │
+    │  │ Comprehension   │  │
+    │  └─────────────────┘  │
+    │  ┌─────────────────┐  │
+    │  │ Anon. function  │  │
+    │  └─────────────────┘  │
+    │  ┌─────────────────┐  │
+    │  │ Try block       │  │
+    │  └─────────────────┘  │
+    │                       │
+    └───────────────────────┘
+
+    > Those are the two *most* commonly seen structures for code organisation in Elixir.
+
+    In the general case, however, all scopes are arbitrarily nestable: we could imagine a case
+    expression inside a comprehension or a top-level if expression defining different modules
+    depending on some condition. For example:
+    @code elixir
+    f = fn x ->
+      case x do
+        1 ->
+          defmodule M do
+            def say do
+              "one"
+            end
+          end
+        2 ->
+         defmodule N do
+            def say do
+              "two"
+            end
+          end
+      end
+    end
+
+    # no module has been defined yet
+    M.say       # => undefined function: M.say/0
+    N.say       # => undefined function: N.say/0
+
+    # define M
+    f.(1)
+    M.say       # => "one"
+    N.say       # => undefined function: N.say/0
+
+    # define N
+    f.(2)
+    M.say       # => "one"
+    N.say       # => "two"
+    @end
+
+    In order to understand how the example above works, you should be aware of the fact the a module
+    definition creates the module as its side-effect, so the module itself will be available
+    globally. Only the name of the module is affected by the nesting of the `defmodule`.
+
+**** Nesting and shadowing
+     According to the rules of lexical scope, any variables defined in the surrounding scope are
+     accessible in all other scopes it contains.
+
+     In *Figure 1* above, any variable defined in the top level scope will be accessible in the
+     module’s scope and any scope nested inside it, and so on.
+
+     There is an exception to this rule which applies only to named functions: any variable coming
+     from the surrounding scope has to be unquoted inside a function clause body.
+
+     Any variable in a nested scope whose name coincides with a variable from the surrounding scope
+     will shadow that outer variable. In other words, the variable inside the nested scope
+     temporarily hides the variable from the surrounding scope, but does not affect it in any way.
+
+**** Top level scope
+     The top level scope includes every variable and identifier defined outside of any other scope.
+     @code elixir
+     x        # => undefined function: x/0
+
+     x = 1
+     x        # => 1
+
+     f = fn -> x end
+     f.()     # => 1
+     @end
+
+     Named functions cannot be defined at the top level because a named function always belongs
+     within a module. However, named functions can be imported into any lexical scope (including the
+     top level scope) like this:
+     @code elixir
+     import String, only: [reverse: 1]
+
+     reverse("Hello")  # => "olleH"
+     @end
+
+**** Function clause scope
+     Each function clause defines a new lexical scope: any new variable bound inside it will not be
+     available outside of that clause:
+     @code elixir
+     defmodule M do
+       def foo(x), do: -x
+
+       # this 'x' is completely independent from the one in 'foo/1'
+       def bar(x), do: 2*x
+
+       x = 1
+
+       # shadowing in action: the 'x' in the argument list creates a variable
+       # local to the function clause's body and has nothing to do with the
+       # previously defined 'x'
+       f = fn(x) ->
+         x = x + 1
+       end
+
+       y = f.(x)
+       IO.puts "The correct answer is #{y} == #{f.(x)}"
+       # output: The correct answer is 2 == 2
+
+       # in this case the argument 'y' shadows the named function 'y/0'
+       def y(y), do: y*2
+
+       # here the reference to 'y' inside the function
+       # body is actually a recursive call to 'y/0'
+       def y, do: y*2
+     end
+
+     M.foo 3      # => -3
+     M.bar 4      # => 8
+
+     M.y -2       # => -4
+     M.y          # => infinite loop
+     @end
+
+     Apart from named functions, a new function clause scope is created for each module-like block,
+     anonymous function, `try` block body, or comprehension body:
+     @code elixir
+     f = fn(x) ->
+       a = x - 1
+     end
+
+     a            # => undefined function: a/0
+
+     g = fn(f) ->
+       g = f
+     end
+
+     f            # => still the anonymous function defined above
+     g            # => the anonymous function we've just defined
+     @end
+
+     ---
+
+    This is also a good opportunity to talk about variable scoping in Elixir. If any variable is
+    declared or changed inside if, case, and similar constructs, the declaration and change will
+    only be visible inside the construct. For example:
+    @code elixir
+    x = 1        # => 1
+
+    if true do
+      x = x + 1  # => 2
+    end
+
+    x            # => 1
+    @end
+
+    In said cases, if you want to change a value, you must return the value from the `if`
+    expression.
+
+** OTP
+   OTP is a process oriented programming framework integral to Erlang and Elixir. It is an awesome
+   set of tools and libraries that Elixir inherits from Erlang.
+
+   OTP contains a lot of stuff, such as the Erlang compiler, databases, test framework, profiler,
+   debugging tools. But, when we talk about OTP in the context of Elixir, we usually mean the Erlang
+   actor model that is based on lightweight processes and is the basis of that makes Elixir so
+   efficient.
+
+*** Concurrency
+    One of the selling points of Elixir is its support for concurrency. Thanks to the Erlang VM
+    (BEAM), concurrency in Elixir is /easier/ than expected. The concurrency model relies on actors,
+    a contained process that communicates with other processes through messages passing.
+
+**** Processes
+     At the foundation of OTP, there are tiny things called /processes/.
+
+     Unlike OS processes, they are really lightweight. Creating them takes microseconds, and a single
+     machine can easily run multiple thousands of them, simultaneously.
+
+     Processes loosely follow the [actor model]{https://en.wikipedia.org/wiki/Actor_model}. Every process is /basically/ a mailbox that can receive
+     messages and in response to those messages it can:
+     - Create new processes.
+     - Send messages to other processes.
+     - Modify its private state.
+
+***** Spawning processes
+      The most basic way to spawn a process is with the `spawn` function.
+      @code elixir
+      process = spawn(fn -> IO.puts("Hey there, I'm a new process!") end)
+      @end
+
+      Above function will return two values: first is the result of the function, second is the
+      output of spawn - PID, /a unique process identification number/.
+
+      A process will usually close itself once it did what we asked it to do. To check if a process
+      is still alive we can make use of `Process.alive?/1` and pass our process PID as the argument.
+      @code elixir
+      Process.alive?(process)  # => false
+      @end
+
+****** Receive-do loop
+       In case we want to extend the life of a process it make it more worthwhile for us we can make
+       use of a `receive-do` loop.
+
+       For example, let's imagine that we need to create a process that mimics the funds in a palace
+       treasury. We will create a simple process to which you can store or withdraw funds and ask for
+       the current balance.
+
+       We will do that by creating a loop function that responds to certain messages while keeping
+       the state in its argument.
+       @code elixir
+       defmodule Treasury do
+         def loop(balance) do
+           receive do
+             {:store, amount} ->
+               loop(balance + amount)
+             {:withdraw, amount} ->
+               loop(balance - amount)
+             {:balance, pid} ->
+               send(pid, balancee)
+               loop(balance)
+           end
+         end
+       end
+       @end
+
+       In the body of the function, we put the receive statement and pattern match all the messages
+       we want our process to respond to. Every time the loop runs, it will check from the bottom of
+       the mailbox (in order they were received) for messages that match what we need and process
+       them.
+
+       If the process sees any messages with atoms `store`, `withdraw`, `balance`, those will
+       trigger certain actions.
+
+       > *NOTE*: See how `Treasury.loop/1` is recursive, this allows our process to handle multiple
+       >       messages. Without recursion our process would exit after handling the first message.
+
+       To make it a bit nicer, we can add an `open` function and also dump all the messages we don’t
+       need to not pollute the mailbox.
+       @code elixir
+       defmodule Treasury do
+         def open do
+           loop(0)
+         end
+
+         def loop(balance) do
+           receive do
+             # ...
+             _ ->
+              loop(balance)
+           end
+         end
+       end
+       @end
+
+       But, how do we send messages to processes? That's easy. There are two main components to this:
+       `send/2` and `receive/1`.
+
+       The `send/2` function allows us to send messages to PIDs. To listen we use `receive/1` to
+       match messages. If no match is found the execution continues uninterrupted.
+       @code elixir
+       treasury = spawn(Treasury, :open, [])
+
+       send(treasury, {:store, 100})  # ==> 100
+       @end
+
+       > You can read further about Elixir processes /and its documentation/ [here]{https://elixir-lang.org/getting-started/processes.html}.
+
+***** Process linking
+      One problem with `spawn` is knowing when a process crashes. For that we need to link our
+      processes using `spawn_link`. Two linked processes will receive exit notifications from one
+      another:
+      @code elixir
+      defmodule Example do
+        def explode, do: exit(:kaboom)
+      end
+
+      spawn(Example, :explode, [])
+      # => PID<0.66.0>
+
+      spawn_link(Example, :explode, [])
+      # => ** (EXIT from #PID<0.57.0>) evaluator process exited with reason: :kaboom
+      @end
+
+      Sometimes we don’t want our linked process to crash the current one. For that we need to trap
+      the exits using [Process.flag/2]{http://erlang.org/doc/man/erlang.html#process_flag-2}. When trapping exits (`trap_exit` is set to `true`), exit signals
+      will be received as a tuple mesage.
+      @code elixir
+      {:EXIT, from_pid, reason}
+      @end
+
+      @code elixir
+      defmodule Example do
+        def explode, do: exit(:kaboom)
+
+        def run do
+          Process.flag(:trap_exit, true)
+          spawn_link(Example, :explode, [])
+
+          receive do
+            {:EXIT, _from_pid, reason} -> IO.puts("Exit reason: #{reason}")
+          end
+        end
+      end
+
+      Example.run  # => Exit reason: kaboom
+      @end
+
+***** Process monitoring
+      What if we don’t want to link two processes but still be kept informed? For that we can use
+      process monitoring with `spawn_monitor`. When we monitor a process we get a message if the
+      process crashes without our current process crashing or needing to explicitly trap exits.
+      @code elixir
+      defmodule Example do
+        def explode, do: exit(:kaboom)
+
+        def run do
+          spawn_monitor(Example, :explode, [])
+
+          receive do
+            {:DOWN, _ref, :process, _from_pid, reason} -> IO.puts("Exit reason: #{reason}")
+          end
+        end
+      end
+
+      Example.run  # => Exit reason: kaboom
+      @end
+
+****** Agents
+       Agents are an abstraction layer around background processes maintaining state. We can access
+       them from other processes within our application and node. Thr state of our Agent is set to
+       our function's return value:
+       @code elixir
+       {:ok, agent} = Agent.start_link(fn -> [1, 2, 3] end)
+       # => {:ok, #PID<0.65.0>}
+
+       Agent.update(agent, fn (state) -> state ++ [4, 5] end)
+       # => :ok
+
+       Agent.get(agent, &(&1))
+       # => [1, 2, 3, 4, 5]
+       @end
+
+       When we name an Agent we can refer to it by that instead of its PID:
+       @code elixir
+       Agent.start_link(fn -> [1, 2, 3] end, name: Numbers)
+       # => {:ok, #PID<0.74.0>}
+
+       Agent.get(Numbers, &(&1))
+       # => [1, 2, 3]
+       @end
+
+****** Tasks
+       Tasks provide a way to execute a function in the background and retrieve its return value
+       later. They can be particularly useful when handling expensive operations without blocking
+       the application execution.
+       @code elixir
+       defmodule Example do
+         def double(x) do
+           :timer.sleep(2000)
+           x * 2
+         end
+       end
+
+       task = Task.async(Example, :double, [2000])
+       # %Task{
+       #   owner: #PID<0.105.0>,
+       #   pid: #PID<0.114.0>,
+       #   ref: #Reference<0.2418076177.4129030147.64217>
+       # }
+
+       # Do some work
+
+       Task.await(task)  # => 4000
+       @end
+
+     ===
+
+#comment
+vim: nofen fdc=0 scl=auto tw=100 cocu=n cole=2 norl

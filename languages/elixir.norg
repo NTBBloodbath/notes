@@ -8,7 +8,7 @@ categories: [
   functional programming
 ]
 created: 2022-09-13
-updated: 2022-09-13
+updated: 2023-02-20
 version: 0.0.13
 @end
 
@@ -16,7 +16,7 @@ version: 0.0.13
 Use `:Neorg toc split` to open TOC and `q` to close it.
 Press `CR` in any TOC header to navigate between them.
 
-= TOC
+.TOC
 
 * Elixir notes
   These are my notes I made while learning the Elixir programming language.

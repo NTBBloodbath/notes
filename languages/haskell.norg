@@ -1,0 +1,541 @@
+@document.meta
+title: haskell_notes
+description: My Haskell notes
+authors: alejandro
+categories: [
+  Haskell
+  Functional programming
+]
+created: 2021-10-03
+updated: 2023-05-27
+version: 1.1.1
+@end
+
+* What is Haskell?
+  Haskell is a /statically typed, purely/ functional programming language.
+
+ ** But, what is functional programming?
+    In a /purely/ functional programming language you do not tell the computer what to do.
+    You tell it /what stuff is/. For instance, you can tell the computer that the factorial
+    of a number is the product of every integer from 1 to that number or that the sum of
+    a list of numbers is the first number plus the sum of the remaining numbers.
+    You can express both of these operations as /functions/.
+
+    In functional programming, you /can't/ set a variable to one value and then set it to
+    something else later on. If you say `a` is 5, you can't just change your mind and say
+    it is something else. After all, you said it was 5.
+
+    In /purely/ functional programming languages, a function has no /side effects/. The only
+    thing a function can do is calculate something and return the result. At first, this seems
+    limiting, but it actually has some very nice consequences. For instance, if a function
+    is called twice with the same parameters, it is guaranteed to return the same result both times.
+
+  ---
+  Haskell is /lazy/. This means that unless you specifically told otherwise, Haskell won't
+  execute functions until it needs to show you a result. Haskell, being a lazy language, takes
+  advantage of this fact and defers actually computing results for as long as possible. Once you
+  want your results to be displayed, Haskell will do just the bare minimum computation required
+  to display them.
+
+  Laziness also allows you to make seemingly infinite data structures, because only the parts of
+  the data structures that you choose to display will actually be computed.
+
+  As said before, Haskell is statically typed, however Haskell uses a very good type system that
+  has /type inference/. This means that you do not need to explicitly label every piece of code with
+  a type, because Haskell's type system can intelligently figure it out. For example, if you say
+
+@code haskell
+  a = 5 + 4
+@end
+
+  You do not need to tell Haskell that `a` is a number, Haskell can figure that out by itself. Type
+  inference makes it easier for you to write code that is more general. If you write a function that
+  takes two parameters and adds them together, but you do not explicitly state their type, the
+  function will work on any two parameters that act like numbers.
+
+
+* Setting up your Haskell environment
+  To get started with Haskell, you need only two things:
+  - A text editor
+  - A Haskell compiler (`GHC` is the most popular one)
+
+  Most probably thing is that you already have your favorite text editor installed so we will not
+  deep dive on this topic. However if you have Neovim you can setup it for Haskell development in
+  two different ways.
+
+ ** Neovim 0.5.0 onwards
+    Since you are using the latest and greatest version of Neovim, you will surely be using TreeSitter
+    for syntax highlighting, indentation, etc. so we can proceed to install the Haskell treesitter
+    parser. You can place this in your treesitter configuration.
+
+@code lua
+  -- Place this line before your nvim-treesitter setup function if you are using MacOS
+  -- because MacOS uses the wrong C version when compiling the Haskell parser
+  require("nvim-treesitter.install").compilers = { "gcc" }
+
+  -- We are adding 'haskell' to your ensure installed list in your nvim-treesitter setup function
+  ensure_installed = { "haskell" }
+@end
+
+    After this you can run `:TSInstall haskell` to manually install the Haskell treesitter parser. The
+    parser should be automatically updated when updating `nvim-treesitter` plugin.
+
+ ** Neovim 0.4.x
+    Since this Neovim version does not ship with TreeSitter integration, you will need to fallback to
+    the "legacy" method, that is install the Haskell plugin for (Neo)/Vim with your favorite
+    plugins manager.
+
+    ---
+  For installing the Glasgow Haskell Compiler (`GHC`) we will use *Stack* instead of the
+  Haskell Platform. This is because the Haskell Platform ships also a bunch of Haskell libraries and
+  tools that we do not need right now and would only confuse beginners. To install Stack in *nix
+  platforms:
+
+@code bash
+  curl -sSL https://get.haskellstack.org/ | sh
+
+  stack setup
+@end
+
+  The first command will install Stack in your system and the second one will do a global setup of
+  Stack, this means that will install and setup `GHC` globally in your home directory under the
+  `~/.stack` directory.
+
+ ** How to use GHCi in Stack?
+    `GHCi` is the Glasgow Haskell Compiler interactive environment (that means a REPL for Haskell)
+    /that also includes an interactive debugger/. To use it if you are using Stack you will need to
+    prepend `stack` in the command so it will be `stack ghci` instead of just `ghci`.
+
+    *NOTE*: This will work only after running `stack setup`!
+
+
+* Functions
+  In Haskell, functions has a name, a list of arguments and an expression, e.g.
+
+@code haskell
+  name arg1 arg2 argN = expr
+@end
+
+  Note that there are no parenthesis around the arguments and the arguments are not being separated
+  by commas like in imperative programming languages.
+
+  Our function expression is what our function returns, this means that the expression that a
+  function is defined as is what this function returns. Unlike imperative programming languages,
+  there is no a `return` statement in Haskell.
+
+  When calling functions we follow almost the same syntax we used for declaring functions. For
+  example let's suppose that we have this function in a `greet.hs` file
+
+@code haskell
+  greet name = putStrLn ("Hello, " ++ name)
+@end
+
+  So the next step we want to do is actually calling our function. It is simple as doing
+
+@code haskell
+  greet "Alejandro"
+@end
+
+  In other words, calling functions is as simple as writing the function name and then the arguments
+  and again the arguments are not being separated by commas nor between parenthesis. Our final file
+  will look like this
+
+@code haskell
+  main :: IO ()
+
+  greet name = putStrLn ("Hello, " ++ name)
+
+  main = greet "Alejandro"
+@end
+
+  If we compile our file with `stack ghc greet.hs` and then run it by executing our produced binary
+  we will get `Hello, Alejandro` as the output.
+
+  *NOTE*: A shorthand for this would be `stack runghc greet.hs`.
+
+  Let's see another example about functions and how the function return works.
+
+@code haskell
+  in_range min max x =
+    x >= min && x <= max
+
+  in_range 0 5 3
+    -- True
+
+  in_range 4 5 3
+    -- False
+@end
+
+ ** Let
+    Sometimes you want to store the result of some expression in a variable and then return an end
+    statement. Of course we can't do `return (foo && bar);` because this is imperative and not
+    declarative so how should we do it?
+
+    We can do it with `let` bindings where we bind the result of some expression to a name like
+    `in_lower_bound` and then produce an end result in relation to whatever names we just defined.
+    So we say "let name equals to expression" and then maybe some other names and other expressions,
+    `in` and then the final expression, e.g.
+
+@code haskell
+  in_range min max x =
+    let in_lower_bound = min <= x
+        in_upper_bound = max >= x
+    in
+    in_lower_bound && in_upper_bound
+@end
+
+ ** Where
+    Another way of doing this is with the `where` binding where you have the final result of your
+    function and in the end say where you know certain names are defined as certain expressions.
+
+@code haskell
+  in_range min max x = ilb && iub
+    where
+      ilb = min <= x
+      iub = max >= x
+@end
+
+ ** If
+    Having a control over the program flow can be done with `if-then-else`. For instance
+
+@code haskell
+  in_range min max x =
+    if ilb then iub else False
+    where
+      ilb = min <= x
+      iub = max >= x
+@end
+
+ ** Infix
+    Functions can be written in an infix syntax or infix notation where you write the function
+    between the arguments. For example, you can do `:t` and then write the name of your function or
+    of the operator with parenthesis around them you get their type.
+
+@code haskell
+ghci> :t (+)
+(+) :: Num a => a -> a -> a
+@end
+
+    It is also important to know that you can write any function with two arguments in this infix
+    style by putting little quotes around (``) the function name, e.g.
+
+@code haskell
+  add a b = a + b
+
+  add 10 20   -- 30
+  -- Both methods are equivalent
+  10 `add` 20 -- 30
+@end
+
+
+* Types
+  As we said before, Haskell is statically typed so every value in Haskell has a type and that type
+  is strict. To define types in Haskell we follow this syntax
+
+@code haskell
+  name :: Type
+@end
+
+  Basically the name of our value followed by two colons and then the type. Let's see some examples.
+
+@code haskell
+  x :: Integer
+  x = 1
+
+  y :: Bool
+  y = True
+
+  z :: Float
+  z = 3.14
+@end
+
+  But, what about function types? Functions have their own types since functions are just values.
+  Let's take a look at how types for functions work.
+
+@code haskell
+  in_range :: Integer -> Integer -> Integer -> Bool
+  in_range min max x = x >= min && x <= max
+
+  in_range 0.5 1.5 1 -- Type Error
+  in_range 0 5 3     -- Correct
+@end
+
+  In functions you basically write them as a list of types for your arguments and then whatever the
+  type for your return value is. So in this case we want `in_range` to take three Integers and
+  return a Bool.
+
+  > See also {https://wiki.haskell.org/Type}[Haskell Wiki | Type].
+
+
+* Recursion
+  Loops does not exist in Haskell so if you want something to loop in any way you have to use
+  recursion, this means a function calling itself with some other arguments or maybe even the same
+  arguments. Let's see an example!
+
+@code haskell
+  fac n =
+    if n <= 1 then
+      1
+    else
+      n * fac (n - 1)
+@end
+
+  Here we say "Ok, the faculty of n smaller or equal to 1 should be 1" and otherwise we have this
+  recursive call where we say that the definition of the faculty of n is n times the faculty of n
+  minus 1. If we take a look at how the evaluation works we see this works sort of as expected.
+
+@code haskell
+  fac 3
+  -- 3 * fac 2
+  -- 3 * 2 * fac 1
+  -- 3 * 2 * 1
+  -- 6 * 1
+  -- 6
+@end
+
+ ** Guards
+    There are some ways to write `if-then-else` in Haskell so you do not need to actually write
+    `if-then-else`. One of these ways to write functions that has a different functionality based on
+    some boolean expressions can be done with `guards`.
+
+    With guards you cannot have only one or two guards but any finite number of them. Guards needs
+    to have some boolean expression, by example `n` is smaller or equal to `1`. The first Guard
+    (the first boolean expression) which evaluates to true will be the one taken as the definition
+    for our function or any function application. For instance
+
+@code haskell
+  fac n
+    | n <= 1    = 1
+    | otherwise = n * fac (n - 1)
+@end
+
+    Here we need to know that `otherwise` is a constant that will always evaluate to true, maybe you
+    already know this as `default` in imperative languages with a `switch-case` statement.
+
+ ** Accumulators
+    Another way of implementing recursive functions is with accumulators.
+
+@code haskell
+  fac n = aux n 1
+    where
+      aux n acc
+        | n <= 1    = acc
+        | otherwise = aux (n - 1) (n * acc)
+@end
+
+    So in this case we say that the faculty function is the result of an auxiliary function `aux`.
+    This auxiliary function takes another argument called `acc` which is our accumulator.
+
+    In an accumulator you can /of course/ accoumulate some result and that's what's being done here.
+    So what we are saying here is that if `n` is smaller or equal to 1 we will not return 1 but the
+    accumulator whatever our result at that point is. Otherwise we update `n` with `n - 1` and them
+    compute the intermediate result or the result that we just get to that point by multiplying the
+    accumulator we had with `n`.
+
+
+* Lists
+  A list is a listing of elements in a certain order where every element has to have a fixed index.
+  Lists only have one internal type, this means that you cannot do a list of Integers and Floats.
+
+@code haskell
+  [1,2,3,4,5] :: [Integer]
+@end
+
+  Lists can be constructed by constructors. There are two types of constructors.
+
+  ~ The empty lists (`[]`), meaning the list does not have elements in it
+  ~ The colon or prepend or cons (`x:xs`). This colon prepends any element to an already existing
+    list.
+
+  Let's see how a `[1,2,3,4,5]` list could be constructed with constructors.
+
+@code haskell
+  1 : 2 : 3 : 4 : 5 : []
+@end
+
+  Basically we are recursively prepending the result of 1 prepended with 2, prepended with three and
+  so on until we prepend to the empty list.
+
+ ** Generating lists
+    Now that we know what lists are, let's take a look at how to generate lists.
+
+    We could write a function like this, where `asc` means `ascending`.
+
+@code haskell
+  asc :: Integer -> Integer -> [Integer]
+  asc n m
+    | m < n  = []
+    | m == n = [m]
+    | m > n  = n : asc (n + 1) m
+
+  asc 1 3
+    -- [1, 2, 3]
+@end
+
+    This function will create an ascending list going from `n` to `m`. if `m` is smaller than `n`
+    then our function does not make sense so we return an empty list. If `m` is equal to `n` then we
+    return a lsit with only one element in it, namely `m`. Finally, if `m` is bigger than `n` then
+    we recursively construct the new list by prepending `n` and then doing a recursive call to `asc`
+    with an incremented `n`.
+
+    The theory behind our `asc` function is that `n` at some point will hit the value of `m`, at
+    which case we return the last list and then we are finished.
+
+    Note that we wrote the list with just one element as `[m]` and not as `m : []`. This is because
+    in general we can write a list like this if the amount of elements in it is finite.
+
+ ** Functions on lists
+    As lists are very important, there are many functions already defined on them, most of them
+    resides in the `Data.List` module which you can import with `import Data.List`.
+
+    > Two very important functions of `Data.List` are `head` and `tail`.
+
+    - `head` gives you the first element of a list.
+    - `tail` gives you all the list but the first element.
+
+@code haskell
+  head :: [a] -> a
+  head [1, 2, 3, 4, 5]
+    -- 1
+
+  tail :: [a] -> [a]
+  tail [1, 2, 3, 4, 5]
+    -- [2, 3, 4, 5]
+@end
+
+    There is also `init` that gives you all the list but the last element.
+
+@code haskell
+  init :: [a] -> [a]
+  init [1, 2, 3, 4, 5]
+    -- [1, 2, 3, 4]
+@end
+
+    To get the length of a list you can use the `length` function.
+
+@code haskell
+  length :: [a] -> Integer
+  length [1, 2, 3, 4, 5]
+    -- 5
+@end
+
+    To determine if a list is empty or not, you can use the `null` function.
+
+@code haskell
+  null :: [a] -> Bool
+  null []
+    -- True
+
+  null [1, 2, 3, 4, 5]
+    -- False
+@end
+
+    This `null` function is very important because `head` cannot be called on an empty list since of
+    course there is no first element to return.
+
+    *NOTE*: All these functions works on polymorphic lists, this means that you can use them in a list of
+          integers, a list of booleans, etc.
+
+ ** Lists comprehensions
+    Lists comprehensions can be used to take one or multiple lists and build new lists out of them.
+    Let's see some examples.
+
+@code haskell
+  -- This is the syntax for lists comprehensions
+  -- [ <gen> | <elem> <- <list>, ..., <guard>, ... ]
+
+  [ 2 * x | x <- [1, 2, 3] ]
+    -- [2, 4, 6]
+  [ 2 * x | x <- [1, 2, 3], x > 1 ]
+    -- [4, 6]
+@end
+
+    Note that in these lists comprehensions we can have guards, meaning that we can pre-filter the
+    elements we actually want to look at.
+
+    Now let's look at how that works using multiple lists.
+
+@code haskell
+  [ (x, y) | x <- [1, 2, 3], y <- ['a', 'b'] ]
+    -- [(1, 'a'), (1, 'b'), (2, 'a'), (2, 'b'), (3, 'a'), (3, 'b')]
+@end
+
+    Basically you go through the first list and start with the first element and then yougo through
+    the second list, so we start with the first element (`1`) and then we go through the second list
+    (`a` and `b`) and we finally end with a list of pairs (tuples).
+
+ ** Lists patterns
+    Lists can have pattern matching. There are two patterns we can look at.
+
+    ~ The empty lists (`[]`).
+    ~ The lists with the colon constructor (`x:xs`).
+
+    Let's see some examples!
+
+@code haskell
+  sum :: [Integer] -> Integer
+  sum []     = 0
+  sum (x:xs) = x + sum xs
+
+  evens :: [Integer] -> [Integer]
+  evens []         = []
+  evens (x:xs)
+    | mod x 2 == 0 = x : evens xs
+    | otherwise    = evens xs
+@end
+
+    In the first example we have that the sum of an empty list is 0 because there are no elements to
+    add together. Otherwise we have a list with one element in it and the rest of that list that we
+    call excess so we say that the sum is defined as `x` plus whatever the rest of that sum of the
+    list is.
+
+    *NOTE*: you can call the list with one element in it and the rest of that list whatever you like
+          but it's an standard to call them `x` and `xs`.
+
+    In the second example we filter out all the non even numbers from the given list and of course
+    if the input is an empty list we will return an empty list. Otherwise we check if the list
+    element can be cleanly divided by 2 with a modulo operation and if there is no residual we put
+    the number into our new list and if the number cannot be divided by 2 then we just ignore it and
+    continue with the recursive call.
+
+
+* Tuples
+  A tuple is a way to have multiple elements in a pair and those elements does not need to be of the
+  same type. So by example we can declare a tuple with a person name and his age.
+
+@code haskell
+  ("John", 38) :: (String, Integer)
+@end
+
+  Those tuples can be also used in pattern matching where for example you can build a `fst` and a
+  `snd` functions to get the first and the second element in a tuple.
+
+@code haskell
+  fst :: (a, b) -> a
+  fst (x, _) = x
+
+  snd :: (a, b) -> b
+  snd (_, y) = y
+@end
+
+  *NOTE*: those functions are already built-in in Haskell so you do not have to define them
+        yourself, we defined them to see how pattern matching works on tuples.
+
+  This sort of pattern matching can be also done in bindings like `let` or `where` bindings where
+  you can split tuples you have with such a binding like saying that `x` and `y` are 1 and 2
+  respectively and now `x` is one and `y` is two.
+
+  Now let's put all our lists and tuples knowledge together to build an `addTuples` function.
+
+@code haskell
+  addTuples :: [(Integer, Integer)] -> [Integer]
+  addTuples xs = [ x + y | (x, y) <- xs ]
+@end
+
+  This function will get a list of tuples and return a list with the sums of every single tuple and
+  since we need to do something element per element and tuples pattern matching also works in lists
+  comprehensions we can use a list comprehension.
+
+
+#comment
+vim:sw=2:ts=2:cole=3:cocu=n:tw=100:norl:

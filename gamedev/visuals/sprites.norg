@@ -1,0 +1,88 @@
+@document.meta
+title: sprites
+description:
+authors: amartin
+categories:
+created: 2024-08-11T09:19:23-0400
+updated: 2024-08-11T10:29:29-0400
+version: 1.1.1
+@end
+
+* Sprites
+** Pixel Art
+   Most of the tile-maps and other sprites should be based on your main character, because your
+   protagonist will be the asset that players see the most. And this way, everything will be sclaed
+   correctly from scene to scene.
+
+*** What canvas size will best fit your pixel art
+
+
+*** Tile-maps
+**** What is a tile-map?
+     A tile-map, /or tile-set/ is a grid of squares containing all of your individual assets and can
+     be easily used to quickly generate terrain and levels. In most cases, all of your individual
+     tiles should be the same size, and the content of the drawing should be contained within the
+     space of the tile.
+
+**** How to correctly size tile-maps
+     For realistic games, usually the character will be fairly small compared to their surroundings,
+     so a character design smaller than a tile would make sense. Also, the size of the protagonist
+     in relation to the world can be used to create drama. Larger surroundings and antagonists can
+     give the game a dramatic, dangerous feel. To contrast this, making your character pretty big in
+     terms of both the screen and the world can give the impression that your protagonist is more
+     competent.
+
+**** Choosing a tile-map size
+     There are some common sizes for tile maps that you might have heard before, and they go up in
+     powers of two.
+
+     2³ = 8      ┌───┐
+     2⁴ = 16     │ ┌─┼─┐
+     2⁵ = 32     └─┼─┘ │
+     2⁶ = 64       └───┘
+
+***** 8 by 8
+      The smallest is eight by eight pixels, a really uncommon size that is   ┌──────────┐
+      too small for most applications. Most of the art you can create in this │          │
+      scale will be very stylised, and therefore better for games with a      │          │
+      simple idea. If you're making a lore-heavy fantasy game with emphasis   │          │
+      on items, tools, and character expressions, 8 by 8 might not be the     ├─┐        │
+      best size for you. However, if you're just making a simple platformer   └─┴────────┘
+      game, this size is perfect for beginners.
+
+***** 16 by 16
+      This is probably the most commonly used size for pixel art in general.  ┌──────────┐
+      This is the best option for both top-down and side-scrolling games,     │          │
+      because you get a decent amount of detail without having to draw a      │          │
+      large number of pixels.                                                 ├───┐      │
+                                                                              │   │      │
+                                                                              └───┴──────┘
+***** 32 by 32
+      This is less common but still a really good choice for many games.      ┌──────────┐
+      At this scale it becomes easier to give your sprite more detail,        │          │
+      however, if you're developing a game, it will take *much longer*        ├──────┐   │
+      to complete all the assets you need.                                    │      │   │
+                                                                              │      │   │
+      *Note*: It is recommended to do a couple of characters in 16 by 16      └──────┴───┘
+              before moving to 32 by 32.
+
+***** 64 by 64
+      While characters of these sizes can lend themselves to more artistic    ┌──────────┐
+      sprites, it is important to remember how big your protagonist will be   │          │
+      on a screen. If the tile-map is large in resolution, then each pixel    │          │
+      will become smaller, making the art less pixel art and more like        │          │
+      realistic imagery. This can remove the charm of the game, as the main   │          │
+      appeal of pixel art is its retro aesthetic and simplicity.              └──────────┘
+
+      ---
+
+     .image ./pixelart_relationship_graph.png
+
+
+
+
+*** How to be efficient with your limited pixels
+
+
+#comment
+vim:tw=100:norl:conceallevel=1:concealcursor=n

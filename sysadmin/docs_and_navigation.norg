@@ -1,0 +1,188 @@
+@document.meta
+title: docs_and_navigation
+description: Documentation browsing and navigation on Linux
+authors: alejandro
+categories: [
+  sysadmin
+  linuxupskillchallenge
+  notes
+]
+created: 2024-09-11T13:32:19-0400
+updated: 2024-09-11T14:31:36-0400
+version: 1.1.1
+@end
+
+* Docs and Navigation
+** Read the manual
+   As a sysadmin, you're expected to be skilled in the command-line, as it is your default working
+   environment and thus you will spend much time at it. Linux is designed to let you know the
+   system, and let you learn how to use it.
+
+   Even the most experienced sysadmins will do an online search to find advice for how to use
+   commands - so the sooner you too get into that habit the better! The documentation available in
+   form of text manuals (man pages), guides and forums is where you will spend most of your time
+   during this journey.
+
+   Whereas proprietary systems have some free documentation, you see much more frequently the use of
+   paid customer support to fix issues or find how a particular task can be executed. Although you
+   can also do this with Linux (e.g. Canonical, RedHat and SUSE), this is most likely not the case.
+   Reading the manual is *the first thing* you should do when you're learning a command.
+
+   Starting with the `man` command. Each application installed comes with its own page in this manual,
+   so that you can look at the page for `grep` to see the full details on the syntax like this: `man
+   grep`.
+
+   As you can see, these are excellent for the detailed syntax of a command, but many are extremely
+   terse, and for others the amount of detail can be somewhat overwhelming.
+
+   And that's why `tldr` is such a powerful tool! You can easily install it through the `tealdeer`
+   package on Debian/Ubuntu.
+
+   Example output for `tldr grep`:
+   @code bash
+    # You will most likely need to run `tldr --update` before using `tldr` in order to download the
+    # required page cache.
+    ubuntu@hostname:~$ tldr grep
+
+      Find patterns in files using regular expressions.
+      More information: <https://www.gnu.org/software/grep/manual/grep.html>.
+
+      Search for a pattern within a file:
+
+          grep "search_pattern" path/to/file
+
+      Search for an exact string (disables regular expressions):
+
+          grep -F|--fixed-strings "exact_string" path/to/file
+
+      Search for a pattern in all files recursively in a directory, showing line numbers of matches, ignoring binary files:
+
+          grep -r|--recursive -n|--line-number --binary-files without-match "search_pattern" path/to/directory
+
+      Use extended regular expressions (supports `?`, `+`, `{}`, `()` and `|`), in case-insensitive mode:
+
+          grep -E|--extended-regexp -i|--ignore-case "search_pattern" path/to/file
+
+      Print 3 lines of context around, before, or after each match:
+
+          grep --context|before-context|after-context 3 "search_pattern" path/to/file
+
+      Print file name and line number for each match with color output:
+
+          grep -H|--with-filename -n|--line-number --color=always "search_pattern" path/to/file
+   @end
+
+   If you know a keyword or some description of hat the command is supposed to do, you can try
+   `apropos` or `man -k` like this:
+   @code bash
+   ubuntu@hostname:~$ apropos "working directory"
+   git-stash (1)        - Stash the changes in a dirty working directory away
+   pwd (1)              - print name of current/working directory
+   pwdx (1)             - report current working directory of a process
+
+   ubuntu@hostname:~$ man -k "working directory"
+   git-stash (1)        - Stash the changes in a dirty working directory away
+   pwd (1)              - print name of current/working directory
+   pwdx (1)             - report current working directory of a process
+   @end
+
+   *But* you will soon find out that not /every/ command has a manual that you can read with `man`. Those
+   commands are contained within the shell itself, and we call them [builtin commands]{https://www.gnu.org/software/bash/manual/html_node/Shell-Builtin-Commands.html}.
+
+   There are some overlaping (i.e. builtin commands that also have a man page) but if `man` does not
+   work, we use `help` to display information about them.
+   @code bash
+   ubuntu@hostname:~$ man export
+   No manual entry for export
+
+   ubuntu@hostname:~$ help export
+   export: export [-fn] [name[=value] ...] or export -p
+     Set export attribute for shell variables.
+
+     Marks each NAME for automatic export to the environment of subsequently
+     executed commands.  If VALUE is supplied, assign VALUE before exporting.
+
+     Options:
+       -f        refer to shell functions
+       -n        remove the export property from each NAME
+       -p        display a list of all exported variables and functions
+
+     An argument of `--' disables further option processing.
+
+     Exit Status:
+     Returns success unless an invalid option is given or NAME is invalid.
+   @end
+
+   The best way to know if a command is a builtin command, is to check its `type`:
+   @code bash
+   ubuntu@hostname:~$ type export
+   export is a shell builtin
+   @end
+
+   And lastly, `info` reads the documentation stored in
+   [info]{https://en.wikipedia.org/wiki/Info_(Unix)} format.
+
+** Navigation
+*** Navigate the file structure
+    - Start by reading the manual: `man hier`.
+    - At all times you are /"in"/ one part of the system - the command `pwd` (print working directory)
+      will show you where you are.
+    - Generally your shell prompt is also configured to give you at least some of this information,
+      so if I'm /"in"/ in the `/etc` directory then the prompt might be `ubuntu@hostname:/etc$` or simply
+      `/etc: $`.
+    - `cd` moves to different areas - so `cd /var/log` will take you into the `/var/log` directory.
+    - You can move "up" the structure by typing `cd ..`.
+    - A /"relative"/ location is based on your present working directory.
+    - A simple `cd` command with no arguments will always return you to your own defined /"home
+      directory"/, also referred to as `~`. NB: this differs from DOS/Windows.
+    - What files are in a folder? The `ls` (list) command will give you a list of the files, and sub
+      directories. Like many Linux commands, there are options (known as /"switches"/) to alter the
+      meaning of the command or the output format. For example, `ls -l -t` and `ls -l -t -r -a`.
+    - By convention, files with a starting character of `.` are considered hidden and then `ls`, and
+      many other commands, will ignore them. The `-a` switch includes them. You should see a number of
+      hidden files in your home directory, for example.
+    - In your home directory type `ls -ltra` and look at the far left hand column - those entries with
+      a `d` as the first character on the line are directories (usually known as folders) rather than
+      files. They may also be shown in a different color or font - if not, then adding the
+      `--color=auto` switch should do this.
+
+    > *Note*: generally most Linux commands will accept one /or more/ "parameters", and one /or more/
+      "switches". So, when we say `ls -l /var/log` the `-l` is a switch to say "long format" and the
+      `/var/log` is the "parameter". Many commands accept a large number of switches, and these can
+      generally be combined (so from now on, use `ls -ltra`, rather than `ls -l -t -r -a`).
+
+*** Basic directory manipulation
+    - You can make a new directory with the `mkdir` command, e.g. `mkdir test`.
+    - You can create even more directories (`mkdir test1 test2 ...`), nesting inside directories
+      (`mkdir -p`), and then navigate between them with the `cd` command.
+    - When you want to move that directory inside another directory, you use `mv` and specify the path
+      to move (e.g. `mv test1 tests`).
+    - To delete (or remove) a directory, use `rmdir` if the directory is empty or `rm -r` if there still
+      any files or directories inside of it.
+
+*** Basic file manipulation
+    - You can make new empty files with the `touch` command.
+    - When you want to move that file to another directory, you use `mv` and specify the path to move
+      (e.g. `mv test.txt tests`).
+    - To delete (or remove) a file, use `rm`.
+
+*** Move around directories with pushd and popd
+    `pushd` and `popd` are shell builtin commands used for efficiently navigating between directories
+    while keeping track of the original working directory. Both of these builtin commands are
+    specially useful to automate directory navigation tasks in scripts. Make sure to read the help
+    pages for both builtin commands.
+
+**** pushd
+     Pushes the current directory onto a stack and changes the directory to a specified path, e.g.
+     `pushd /etc` from the home directory.
+
+     > *Notes*: *1.* The `pushd` command maintains a stack of directories. Each time `pushd` is used, the
+       current directory is pushed onto the stack. *2.* You can push multiple directories onto the
+       stack, e.g. `pushd /etc/cron.d`. *3.* Running `pushd` with no arguments switches between the last two
+       /pushed/ directories.
+
+**** popd
+     Pops the top directory off the stack and changes to that directory, e.g. if `/etc` was the last
+     directory pushed, `popd` would change back to the home directory.
+
+     > *Note*: the `-n` option prevents `popd` from changing the directory if the stack is empty.

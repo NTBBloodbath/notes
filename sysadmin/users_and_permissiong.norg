@@ -1,0 +1,171 @@
+@document.meta
+title: users_and_permissions
+description: Users and permissions on Linux
+authors: alejandro
+categories: [
+  sysadmin
+  linuxupskillchallenge
+  notes
+]
+created: 2024-09-11T14:28:40-0400
+updated: 2024-09-11T16:02:17-0400
+version: 1.1.1
+@end
+
+* Users and Permissions
+  You may know /and be aware/ that [root is the power user on a Linux system]{https://www.ssh.com/academy/pam/root-user-account#what-is-a-root-user?}. This administrative or
+  "superuser" account, is all powerful - and it can easily cause significant damage to Linux servers
+  if used incorrectly. Given the critical nature and remote access of many systems, it's essential
+  to avoid mistakes.
+
+  Historically, sysadmins often logged in as `root` directly on production systems. However, modern
+  best practices advocate for restricting direct `root` logins and granting specific trusted users the
+  ability to execute root-level commands using the `sudo` command.
+
+  As a Linux systadmin, you often encounter a variety of systems, ranging from client setups with
+  limited control to custom environments where you have full administrative privileges. To ensure
+  security and efficiency, it's crucial to adapt your approach based on the system's configuration.
+
+** Systems with limited control
+   - *Exercise caution*: double-check commands before execution, as root privileges can lead to
+    unintended consequences.
+   - *Prioritize security*: be mindful of potential vulnerabilities and take necessary precautions.
+
+** Systems with full control
+   - *Create a regular user*: establish a normal user account with `sudo` privileges for day-to-day
+     tasks.
+   - *Configuration*: this is easily achievable in Debian/Ubuntu and other popular distributions like
+     CentOS/RHEL.
+
+** Scopes
+   - *Global*: programs/environments that /any/ user can use, used across the system. A global
+     change affects all users.
+   - *Local*: programs/environments that /a particular/ user runs, not available to other users. A
+     local change affects /only/ one user.
+
+*** Best practices for global changes
+    - *Test environment*: experiment with changes in a controlled environment before applying them
+      to production systems.
+    - *Verify syntax*: carefully review commands for errors and typos to prevent unexpected
+      outcomes.
+    - *Monitor log files*: keep an eye on system logs to identify any issues or potential problems.
+
+** Who has access to what?
+   Linux systems have three user types, each with different levels of privilege:
+   - *Root*: the most powerful user. They can perform any action on the system , including making
+     global changes and modifying other users' settings.
+   - *Sudoers*: regular users who have been granted additional privileges through the `sudo`
+     command. They can execute commands with root-like permissions, but their exact capabilities can
+     vary depending on their configuration.
+   - *Regular users*: the most common user type. They can use the system for their own tasks, but
+     they are limited to making changes to their own files, directories, and environment variables.
+
+** Avoid using root
+   Why is using root a security risk?
+   - *Privilege escalation*: a compromised root acount can grant attackers full control over your
+     system.
+   - *Accidental damage*: mistakes made while using root can have severe consequences.
+
+*** How to use a regular user with sudo privileges
+    First of all, you have to create a new regular user (`man adduser`):
+    @code bash
+    ubuntu@hostname:~$ adduser amartin
+    @end
+
+    Then, you add that user to the `sudo` group (`man usermod`):
+    @code bash
+    ubuntu@hostname:~$ usermod -aG sudo amartin
+    @end
+
+    > *Note*: usually the `sudo` group is called `sudo` in Debian/Ubuntu systems. In
+      CentOS/RHEL/Fedora systems it is called `wheel`.
+
+    This can be also be accomplished by modifying the `/etc/sudoers` file using the `visudo`
+    command.
+
+*** Using sudo
+    Using `sudo` privileges is as simple as prepending `sudo` before commands that require root
+    privileges. e.g. `sudo apt update`. Make sure to read `man sudo`!
+
+    Normally invoking the `sudo` command will ask you to re-confirm your identity with your password.
+    Even if you're logged in through an SSH public key instead of password login. Check out [this
+    post]{https://linuxize.com/post/how-to-setup-passwordless-ssh-login/} to know how to setup passwordless SSH login.
+
+    > *Note*: you can check the last few times `sudo` was used by typing the command
+      `journalctl -e /usr/bin/sudo` with `sudo` privileges.
+
+**** `sudo -i` vs `sudo -s`
+     Both `sudo -i` and `sudo -s` are commands that allow a user to obtain root privileges on a
+     Unix-based system. However, they have some differences in how they function.
+
+     - `sudo -i` stands for `sudo interactive` and it launches a new login shell for the root user.
+       It creates a new environment with the `root` user's home directory and shell configuration
+       files, which is equivalent to logging in directly as root.
+     - `sudo -s` stands for `sudo shell` and it launches a new shell as the root user, but it does
+       not create a new login shell. This means that it does maintain the current user's environment
+       and shell configuration files. Any commands executed in this shell have the privileges of the
+       `root` user, but the environment will still be that of the current user.
+
+     In summary, `sudo -i` is more powerful and creates a new shell with the full environment of the
+     `root` user, while `sudo -s` is less powerful and only launches a new shell with the root
+     user's privileges but with the same environment as the current user.
+
+** Ensure a strong password
+   If you're using a password to login (rather than SSH public key), ensure that it is very strong
+   and unique - i.e. at least 10 alphanumeric characters. This is specially important if you're
+   still using `root`.
+
+*** Changing your password
+    Use the `passwd` command to change your password. Check out `man passwd`
+
+    Think of a new, secure password, then simply type `passwd`, press Enter and give your current
+    password when prompted, then the new one you've chosen, confirm it - and then *WRITE IT DOWN*
+    somewhere. In a production system of course, public keys and/or 2FA (i.e. a hardware token)
+    would be more appropiate.
+
+    ---
+
+   > *Note*: the `/etc/shadow` file is where the hashed passwords are kept. It is a prime target for
+     intruders - who aim to grab it and use offline password crackers to discover the password. So
+     it's safe to assume it shouldn't be visible to non-authorized users in the system.
+
+** Who is logged in?
+   You can see the login history by filtering the username (e.g. `ubuntu`) using the command `last`
+   (check out `man last`). If this is the first time using a non-root user, you will only have one
+   record.
+
+   > *Note*: you can check for *failed login attempts* for `root` with `sudo lastb`.
+
+** Administrative tasks
+   We will go into detail of the many things you can do to your server, but here are some examples
+   of simple administrative tasks that require `sudo`.
+
+   If you wish to, you can rename your server. Traditionally you would do this by editing two files,
+   `/etc/hostname` and `/etc/hosts` and then rebooting - but the more modern, /and recommended/, way
+   is to use the `hostnamectl` command, like this:
+   @code bash
+   ubuntu@hostname:~$ sudo hostnamectl set-hostname amartin-aws
+   @end
+
+   No reboot is required *but* if you want to see the new hostname in the prompt, just open a new
+   session with `bash` (or logoff and login again, same effect).
+
+   For a cloud server, you might find that the hostname changes after a reboot. To prevent this,
+   edit `/etc/cloud/cloud.cfg` and change the `prevent_hostname` line to read:
+   @code bash
+   preserve_hostname: true
+   @end
+
+   You might also consider changing the timezone your server uses. By default this is likely to be
+   `UTC` (i.e. `GMT`) - *which is pretty appropiate for a worldwide fleet of servers*. You could
+   also set it to the zone the server is in, or where you and your headquarters are. For a company
+   this is a decision *not* to be taken lightly!
+
+   > *Important*: make sure to check `man timedatectl` out.
+
+   The major practical effects of this are:
+   ~ The timing of scheduled tasks, e.g. cron jobs.
+   ~ The timestamping of the logs files kept under `/var/log`.
+
+   > *Note*: if you make a change to the timezone, there will naturally be a "jump" in the dates and
+     time recorded.

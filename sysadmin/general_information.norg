@@ -1,0 +1,288 @@
+@document.meta
+title: general_information
+description: General information about the server
+authors: alejandro
+categories: [
+  sysadmin
+  linuxupskillchallenge
+  notes
+]
+created: 2024-09-11T11:07:57-0400
+updated: 2024-09-11T11:39:53-0400
+version: 1.1.1
+@end
+
+* General information
+** About the server
+   Use `lsb_release -a` to see which Linux distro and version you're using. Note that `lsb_release` may
+   not be available in your server (depending on the chosen Linux distro), as it's not widely
+   adopted. However, you will always have the same information available in the system file
+   `os-release` (`/etc/os-release`).
+
+** Hardware information
+   The command `lshw` can give some detailed information on the hardware configuration such as the
+   exact memory configuration, firmware version, mainboard configuration, CPU information, etc.
+   There's also a bunch of switches we can use to filter the information we want to see.
+
+   Note that there are also a few more tools to check hardware. Some of them are:
+   - `lscpu` to display information about the CPU architecture.
+   - `lsblk` to list block (storage) devices, such as HDDs/SSDs, USB flash drives and Network block
+     devices (iSCSI, NFS).
+   - `lspci` to list all PCI devices, such as NICs, graphics cards, storage controllers, modems, etc.
+   - `lsusb` to list USB devices.
+
+** Resources measurement
+*** Measure memory and CPU usage
+    If you want to check the amount of memory used in the system, use `free -h`. Note that `vmstat` is
+    another tool that will give some memory statistics.
+
+    > *Note*: top is like a task manager for Linux. It will display the processes and the consumption
+      of resources. By default, the processes are ordered by percentage of CPU usage. `htop` is an
+      interactive, prettier version.
+
+**** CPU utilization and usage through mpstat and other related tools
+     To use tools like `sar` and `mpstat`, you will need to install a package called `sysstat`. It
+     is available on all the major server-oriented Linux distributions (Debian, Ubuntu, RHEL, etc).
+
+***** mpstat
+      If you're using SMP (Multiple CPU) system, use `mpstat` to display the utilization of each CPU
+      individually. It report processors related statistics. Such as the usr, sys, iowait and idle
+      percentages.
+
+      Example output from Ubuntu 24.04 LTS server in AWS:
+      @code bash
+      ubuntu@hostname:~$ mpstat -P ALL
+      Linux 6.8.0-XXXX-aws (ip-XXX-XX-XX-XXX)         09/11/24        _x86_64_        (1 CPU)
+
+      16:01:01     CPU    %usr   %nice    %sys %iowait    %irq   %soft  %steal  %guest  %gnice   %idle
+      16:01:01     all    0.89    0.05    0.43    0.68    0.00    0.01    4.12    0.00    0.00   93.82
+      16:01:01       0    0.89    0.05    0.43    0.68    0.00    0.01    4.12    0.00    0.00   93.82
+      @end
+
+      > *Notes*:
+        *1.* The `mpstat` command displays activities for each available processor, processor 0
+           being the first one. Global average activities among all processors are also reported.
+        *2.* The `mpstat` command can be used both on SMP and UP machines, but in the latter, only
+           global average activities will be printed (`mpstat -P ALL`).
+
+***** sar
+      You can display today's CPU activity, with the help of `sar` command.
+
+      The `sar` command writes to standard output the contents of selected cumulative activity
+      counters in the operating system. The accounting system, based on the values in the count and
+      interval parameters. For example, to display comparison of CPU utilization; 2 seconds apart; 5
+      times, use `sar -u 2 5`. Where:
+      - `-u 2 5`: report CPU utilization. The following values are displayed:
+      -- `%user`: percentage of CPU utilization that occurred while executing at the user level
+         (application).
+      -- `%nice`: percentage of CPU utilization that occurred while executing at the user level
+         /with/ nice priority.
+      -- `%system`: percentage of CPU utilization that ocurred while executing at the system level
+         (kernel).
+      -- `%iowait` percentage of time that the CPU (or CPUs) were idle during which the system had
+         an outstanding disk I/O request.
+      -- `%idle`: percentage of time that the CPU (or CPUs) were idle and the system did not have an
+         outstanding disk I/O request.
+
+      To get multiple samples and multiple reports set an output file for the `sar` command. Run the
+      `sar` command as a background process using:
+      @code bash
+      sar -o data.file 12 8 >/dev/null 2>&1 &
+      @end
+
+      Better use `nohup` command so that you can logout and check back report later on:
+      @code bash
+      nohup sar -o data.file 12 8 >/dev/null 2>&1 &
+      @end
+
+      > *Note*: `nohup` is a supplemental command that tells the Linux kernel not to stop a
+        `command` once it has started. It will keep running until it's done, even if the user that
+        started it logs out or gets disconnected from the server.
+
+      All data is captured in binary form and saved to a file (`data.file`). The data can then be
+      selectively displayed with the sar command using the `-f` option.
+      @code bash
+      sar -f data.file
+      @end
+
+      To determine which process is monopolizing or eating the CPUs, you can use a combination of
+      commands such as `ps`, `sort` and `head` or `less`.
+      @code bash
+      # Here in this command you could either use `head` to ony display N amount of processes
+      # or use `less` to open all the processes output using the `less` pager.
+      #
+      # Commands breakdown:
+      # ps -eo pcpu,pid,user,args
+      #   - ps: Command to display process information.
+      #   - -e: display all processes, including system ones.
+      #   - -o: specify the columns to display.
+      #      - pcpu: CPU usage percentage.
+      #      - pid: process ID.
+      #      - user: username of the process owner.
+      #      - args: command-line arguments used to start the process.
+      # sort -k 1 -r
+      #   - sort: sort the output of the previous command.
+      #   - k 1: sort by the first column, which is the CPU usage percentage.
+      #   - r: sort in reverse order, so the highest CPU usage is at the top.
+      ps -eo pcpu,pid,user,args | sort -k 1 -r
+      @end
+
+      > *Note*: you could also use `grep` or `egrep` to filter out the output and see if `X` process
+        is in the top of CPU usage processes or not (e.g. `grep -i nginx`).
+
+**** iostat
+     You can also use `iostat` command which reports CPU statistics and I/O statistics for devices
+     and partitions. It can be use to find out your system's average CPU utilization since the last
+     reboot.
+
+     Example output from Ubuntu 24.04 LTS server in AWS:
+     @code bash
+     ubuntu@hostname:~$ iostat
+     Linux 6.8.0-1012-aws (ip-XXX-XX-XX-XXX)         09/11/24        _x86_64_        (1 CPU)
+
+     avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+                0.55    0.03    0.27    0.42    4.13   94.61
+
+     Device             tps    kB_read/s    kB_wrtn/s    kB_dscd/s    kB_read    kB_wrtn    kB_dscd
+     loop0             0.02         0.56         0.00         0.00       4576          0          0
+     loop1             0.01         0.11         0.00         0.00        908          0          0
+     loop2             0.01         0.11         0.00         0.00        926          0          0
+     loop3             0.00         0.00         0.00         0.00         30          0          0
+     xvda             11.55       109.53       351.64         0.00     890521    2858970          0
+     @end
+
+     You may want to use following command, which gives you three outputs every 5 seconds (as previous
+     command gives information since the last reboot):
+     @code bash
+     # Command breakdown
+     # iostat -xtc 5 3
+     #   - iostat: command that provides detailed information about I/O statistics
+     #   - -x: display extended statistics, including device name, total I/O operations, r/w bytes, etc
+     #   - -t: display the time in hours, minutes, and seconds since the system was booted.
+     #   - -c: display cumulative statistics since the system was booted
+     #   - 5: sample the I/O statistics every 5 seconds
+     #   - 3: take 3 samples
+     ubuntu@hostname:~$ iostat -xtc 5 3
+     @end
+
+**** nmon
+     The `nmon` command is a systems administrator tool to get information about CPU, top process,
+     memory and much more for AIX and Linux server. It can be installed with the `nmon` package in
+     Debian/Ubuntu and also RHEL/Fedora systems.
+
+*** Measure disk usage
+    You can use `df -h` to see disk space usage, but go with `du -h` if you want to estimate the size of
+    your files and/or directories.
+
+**** Tools to get disk utilization
+***** iostat
+      As `iostat` can also provide detailed I/O statistics for devices and partitions, it can be
+      used to get disk utilization information.
+
+      Example output from Ubuntu 24.04 LTS server in AWS:
+      @code bash
+      # iostat command can be written as `iostat xvda` in modern Linux versions
+      ubuntu@hostname:~$ iostat -dx
+      Linux 6.8.0-1012-aws (ip-XXX-XX-XX-XXX)         09/11/24        _x86_64_        (1 CPU)
+
+      Device            r/s     rkB/s   rrqm/s  %rrqm r_await rareq-sz     w/s     wkB/s   wrqm/s  %wrqm w_await wareq-sz     d/s     dkB/s   drqm/s  %drqm d_await dareq-sz     f/s f_await  aqu-sz  %util
+      loop0            0.02      0.49     0.00   0.00    0.59    28.07    0.00      0.00     0.00   0.00    0.00     0.00    0.00      0.00     0.00   0.00    0.00     0.00    0.00    0.00    0.00   0.00
+      loop1            0.01      0.10     0.00   0.00    0.99    13.35    0.00      0.00     0.00   0.00    0.00     0.00    0.00      0.00     0.00   0.00    0.00     0.00    0.00    0.00    0.00   0.00
+      loop2            0.01      0.10     0.00   0.00    0.92    12.35    0.00      0.00     0.00   0.00    0.00     0.00    0.00      0.00     0.00   0.00    0.00     0.00    0.00    0.00    0.00   0.00
+      loop3            0.00      0.00     0.00   0.00    0.07     1.00    0.00      0.00     0.00   0.00    0.00     0.00    0.00      0.00     0.00   0.00    0.00     0.00    0.00    0.00    0.00   0.00
+      xvda             3.16     95.23     0.81  20.40    0.92    30.10    6.97    311.06     8.37  54.54    3.13    44.60    0.00      0.00     0.00   0.00    0.00     0.00    0.00    0.00    0.02   0.63
+      @end
+
+      Where:
+      - `rrqm/s`: number of read requests merged per second that were queued to the hard disk.
+      - `wrqm/s`: number of write requests merged per second that were queued to the hard disk.
+      - `r/s`: number of read requests per second.
+      - `w/s`: number of write requests per second.
+      - `await`: average time (in ms) for I/O requests issued to the device to be served. This
+        includes the time spent by the requests in queue and the time spent servicing them.
+      - `%util`: percentage of CPU time during which I/O requests were issued to the device
+        (bandwidth utilization for the device). Device saturation occurs when this value is close to
+        `100%`.
+
+***** iotop
+      There's a `iotop` package to match up I/O statistics with linux processes or threads currently
+      running on the server. It is like the `top` command but for disks and block devices.
+
+**** How do I interpret the output result for optimization?
+     First you need to note down following values from the `iostat` command outputs:
+     ~ Percentage of CPU time during which I/O requests were issued (`%util`).
+     ~ See if a hard disk reports consistently high R/W (`r/s` and `w/s`).
+
+     If any one of these are high, you need to takeone of the following action:
+     - Get high speed disk and controller for the file system (for example move from `SATA I` to
+       `SAS 15k` disk or better SSD).
+     - Tune software or application or kernel or file system for better disk utilization.
+     - use `RAID` array to spread the file system load.
+
+*** Measure network usage
+    You can make use of `ip address` in order to have a general idea of your network interfaces and
+    their IP addresses. However, it won't show you bandwidth usage.
+
+    > *Note*: if you cannot use `ip address` there is the legacy `ifconfig` command. In case it is
+      not available, you can install it through the `net-tools` package.
+
+    For that we have `netstat -i` (static view) and `ifstat` (continuous view). To interrupt `ifstat` just
+    use `Ctrl-C`.
+
+    > *Note*: if you want more info on that traffic, `sudo iftop -i <interface>` is a nice display
+      (quit it by typing `q`). It requires the `iftop` package to be installed on Ubuntu.
+
+** What is swap and swap space?
+   *Swap* is a virtual memory mechanism used by Linux to extend the physical RAM available to the
+   system. When the physical RAM is full, the operating system can temporarily move less frequently
+   used data from RAM to swap space. This frees up physical RAM for more critical processes.
+
+   > *Notes*:
+     *1.* while swap can be helpful in extending the system's memory, it's generally slower than
+        accessing data from physical RAM. Frequent swapping can degrade system performance.
+     *2.* The kernel parameter `vm.swappiness` controls how aggressively the system uses swap. A
+        higher value means the system is more likely to swap out data, while a lower value means it
+        will try to avoid swapping.
+
+   *Swap space* is a dedicated portion of storage on a hard drive or SSD that is set aside for the
+   swap function. It acts as an extension of the physical RAM. When the system needs to swap out
+   data, it writes it to the swap space, and reads back from the swap space into RAM when the data
+   is needed again.
+
+   > *Note*: swap space can be created using a swap file or a swap partition.
+
+*** When to use swap
+    - *Memory-intensive processes*: if you run software that require a lot of memory, swap can
+      help prevent the system from crashing due to insufficient RAM.
+    - *Limited physical RAM*: if your system has limited physical RAM, swap can be essential for
+      running certain software.
+
+** How Linux deals with out-of-memory?
+   When a Linux system runs out of physical memory and virtual memory is exhausted, it enters an
+   out-of-memory (OOM) state This is a critical situation tht can lead to system instability or even
+   a crash. To prevent this, Linux implements several mechanisms to manage memory usage and handle
+   OOM conditions.
+
+*** OOM killer
+    The OOM killer is the primary mechanism used by Linux to deal with OOM situations. It's a kernel
+    process that analyzes the memory usage of running processes and selects a process to kill based
+    on a scoring algorithm. The scoring algorithm considers factors such as:
+    - *Process priority*: processes with lower priorities are likely to be killed.
+    - *Memory usage*: processes that are using more memory are more likely to be killed.
+    - *Process type*: some processes, such as system daemons, are considered essential and are less
+      likely to be killed.
+
+    > *Important*: once a process is selected, the OOM killer sends it a `SIGKILL` signal, which
+      terminates the process immediately.
+
+*** Other mechanisms
+    in addition to the OOM killer, Linux uses several other mechanisms to manage memory usage and
+    prevent OOM conditions:
+    - *Memory pressure*: the kernel monitors memory pressure, which is a measure of how heavily
+      memory is being used. If memory pressure is high, the kernel can take steps to free up memory,
+      such as swapping out less frequently used pages or delaying memory allocations.
+    - *Overcommit control*: Linux can control how aggressively it overcommits memory. Which means
+      allowing processes to allocate more emory than is physically available. *Overcommitting can
+      help improve performance, but it can also increase the risk of OOM conditions.*
+    - *Memory capping*: system administrators *can set memory caps* for individual processes of
+      groups of processes to limit their memory usage.

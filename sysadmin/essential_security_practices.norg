@@ -1,6 +1,6 @@
 @document.meta
-title: users_and_permissions
-description: Users and permissions on Linux
+title: essential_security_practices
+description: Essential security practices on Linux systems
 authors: alejandro
 categories: [
   sysadmin
@@ -12,7 +12,7 @@ updated: 2024-09-11T16:02:17-0400
 version: 1.1.1
 @end
 
-* Users and Permissions
+* Essential security practices
   You may know /and be aware/ that [root is the power user on a Linux system]{https://www.ssh.com/academy/pam/root-user-account#what-is-a-root-user?}. This administrative or
   "superuser" account, is all powerful - and it can easily cause significant damage to Linux servers
   if used incorrectly. Given the critical nature and remote access of many systems, it's essential

@@ -1,0 +1,377 @@
+@document.meta
+title: bash_sweet_home
+description: BASH usage, tips and tricks
+authors: alejandro
+categories: [
+  sysadmin
+  linuxupskillchallenge
+  notes
+]
+created: 2024-09-12T15:59:23-0400
+updated: 2024-09-12T17:58:40-0400
+version: 1.1.1
+@end
+
+* BASH, Sweet Home
+  BASH (Bourne-Again SHell) is a powerful and versatile command-lien interpreter commonly used in
+  Linux and Unix-like operating systems. For sysadmins, mastering BASH is essential for efficient
+  system management, automation, and troubleshooting. This document should provide a comprehensive
+  guide to BASH usage, convering essential configurations, history havigation, and various tips and tricks.
+
+** Configurations
+   There are two essential configuration files that you might deal with:
+   - `.bashrc`: customizes your shell environment.
+   -- *Aliases*: create shortcuts for frequently used commands.
+   -- *Functions*: define custom functions for complex tasks.
+   -- *Prompts*: change the appearance of your command-line prompt.
+   -- *Environment variables*: set variables to control shell behaviour.
+   - `.bash_profile`: configures shell-wide settings.
+   -- *Login messages*: customize the message displayed upon login.
+   -- *Environment variables*: set global variables.
+
+*** Saner defaults
+    BASH defaults are fine, most of the time. However, there are a few configuration settings tweaks
+    that you must do in order to improve your experience (extracted from `bash-sensible` on GitHub):
+    @code bash
+    # Automatically trim long paths in the prompt
+    PROMPT_DIRTRIM=2
+
+    # Turn on recursive globbing (enables ** to recurse all directories)
+    shopt -s globstar 2>/dev/null
+
+    # Case-insensitive globbing (used in pathname expansion)
+    shopt -s nocaseglob;
+
+    ## Smarter tab-completion
+    # Perform file completion in a case insensitive fashion
+    bind "set completion-ignore-case on"
+
+    # Treat hyphens and underscores as equivalent
+    bind "set completion-map-case on"
+
+    # Display matches for ambiguous patterns at first tab press
+    bind "set show-all-if-ambiguous on"
+
+    # Immediately add a trailing slash when autocompleting symlinks to directories
+    bind "set mark-symlinked-directories on"
+
+    ## Sane history defaults
+    # Append to the history file, don't overwrite it
+    shopt -s histappend
+
+    # Save multi-line commands as one command
+    shopt -s cmdhist
+
+    # Record each line as it gets issued
+    PROMPT_COMMAND='history -a'
+
+    # Huge history. Doesn't appear to slow things down, so why not?
+    HISTSIZE=500000
+    HISTFILESIZE=100000
+
+    # Avoid duplicate entries
+    HISTCONTROL="erasedups:ignoreboth"
+
+    # Don't record some commands
+    export HISTIGNORE="&:[ ]*:exit:ls:bg:fg:history:clear"
+
+    # Use standard ISO 8601 timestamp
+    # %F equivalent to %Y-%m-%d
+    # %T equivalent to %H:%M:%S (24-hours format)
+    HISTTIMEFORMAT='%F %T '
+
+    # Enable incremental history search with up/down arrows (also Readline goodness)
+    # Learn more about this here: http://codeinthehole.com/writing/the-most-important-command-line-tip-incremental-history-searching-with-inputrc/
+    bind '"\e[A": history-search-backward'
+    bind '"\e[B": history-search-forward'
+    bind '"\e[C": forward-char'
+    bind '"\e[D": backward-char'
+
+    ## Better directory navigation
+    # Prepend cd to directory names automatically
+    shopt -s autocd 2> /dev/null
+    # Correct spelling errors during tab-completion
+    shopt -s dirspell 2> /dev/null
+    # Correct spelling errors in arguments supplied to cd
+    shopt -s cdspell 2> /dev/null
+    @end
+
+*** Aliases
+    Aliases are shortcuts that can be used to represent longer or more complex commands. They can be
+    defined within a shell session /or/ in your shell configuration files.
+
+    To create an alias, use the following syntax:
+    @code bash
+    alias alias_name='command_to_execute'
+    @end
+
+    To remove an alias, use the following syntax:
+    @code bash
+    unalias alias_name
+    @end
+
+    To /temporarily/ disable an alias, use one of the following syntax:
+    @code bash
+    # Path to the command
+    /usr/bin/ls
+
+    # Call alias with a backslash
+    \ls
+
+    # Use the 'command' shell builtin command
+    command ls
+    @end
+
+    > *Note*: you can display all your shell aliases by running `alias` with no arguments.
+
+**** Essential aliases
+     Here are some useful aliases that you might consider using:
+
+***** Navigating files and directories
+      @code bash
+      alias ..='cd ..' # Go to the previous directory, e.g. .. => '/etc/cron.d' -> '/etc'
+
+      # -v          : natural sort of (version) numbers within text
+      # -p          : append '/' indicator to directories
+      # -N          : print entry names without quoting
+      # --file-type : append special indicators based on filetpe (exluding '*' for binaries/executables)
+      local _LS_ARGS='--color=auto -vpN --file-type --group-directories-first'
+      alias ls='ls ${_LS_ARGS}'
+      alias la='ls ${_LS_ARGS} --almost-all' # Display hidden files
+      alias ll='ls ${_LS_ARGS} -ltshc --author' # Display extra information
+      alias lla='ls ${_LS_ARGS} -ltshc --almost-all --author' # Display extra information, including hidden files
+      @end
+
+***** Managing files
+      @code bash
+      alias rm='rm -I --preserve-root' # Prompt before deleting files and do not remove '/'
+      alias cp='cp -i' # Prompt before overwriting files
+      alias mv='mv -i' # Prompt before overwriting files
+      alias ln='ln -i' # Prompt before removing link destinations
+      alias mkdir='mkdir -pv' # Create parent directories on demand
+
+      # Prevent changing permissions on /
+      alias chown='chown --preserve-root'
+      alias chmod='chmod --preserve-root'
+      alias chgrp='chgrp --preserve-root'
+      @end
+
+***** Viewing system information
+      @code bash
+      alias du='du -ch' # Display disk usage by files/directories in human-readable format and output the total size
+      alias df='df -h' # Display disk usage in human-readable format
+      alias meminfo='free -hlt' # Display memory usage in human-readable format and show total memory
+
+      # Get top process eating memory
+      alias psmem='ps auxf | sort -nr -k 4'
+      alias psmem10='ps auxf | sort -nr -k 4 | head -10'
+
+      # Get top process eating memory
+      alias pscpu='ps auxf | sort -nr -k 3'
+      alias pscpu10='ps auxf | sort -nr -k 3 | head -10'
+
+      # Get server CPU info
+      alias cpuinfo='lscpu'
+
+      # Show open ports
+      alias ports='netstat -tulanp'
+      @end
+
+***** Colorize grep
+      @code bash
+      alias grep='grep --color=auto'
+      alias egrep='egrep --color=auto'
+      alias fgrep='fgrep --color=auto'
+      @end
+
+***** Jobs and history (to save time)
+      @code bash
+      alias h='history'
+      alias j='jobs -l'
+      @end
+
+***** Useful commands
+      @code bash
+      alias path='echo -e ${PATH//:/\\n}' # Pretty print PATH
+      alias timenow='date +"%T"' # Display current time
+      alias datenow='date +"%d-%m-Y"' # Display current date
+      @end
+
+***** Set vim as default
+      @code bash
+      alias vi=vim
+      alias svi='sudo vim'
+      @end
+
+*** History control
+    If you press the Up arrow key in BASH, you can see and reuse all of your previous commands. That
+    is because those commands have been saved to a file called `.bash_history` in your home
+    directory. That history file comes with a bunch of settings and commands that can be very
+    useful.
+
+    First of all, you can view your entire recent command history by typing `history` or you can
+    limit it to your last `N` commands by typing `history N`. You can have more control over what
+    BASH saves and how it saves it.
+
+    For example, adding the following variable to your `.bashrc` will skip any commands that start
+    with a whitespace from being saved to your history list:
+    @code bash
+    HISTCONTROL=ignorespace
+    @end
+
+    If you don't want a frequently executed command to show up in your history, use:
+    @code bash
+    HISTCONTROL=ignorespace:erasedups
+    @end
+
+    > *Note*: with this, every time to use a command, all its previous occurrences are removed from
+      the history file, and only the last invocation is saved to your history list.
+
+    There is also a `HISTTIMEFORMAT` setting, which will prepend all entries in your history file
+    with a timestamp.
+    @code bash
+    HISTTIMEFORMAT="%F %T  "
+
+    # history output:
+    # 270  2024-09-12 20:58:47  ls -a
+    # 271  2024-09-12 20:58:51  cd ..
+    # 272  2024-09-12 21:05:35  date +"%F %  "
+    # 273  2024-09-12 21:05:37  HISTTIMEFORMAT="%F %T  "
+    # 274  2024-09-12 21:05:45  history 5
+    @end
+
+    That makes it a lot easier to browse the command history and find a specific command.
+
+** Best practices
+   By following the best practices collected through extensive research on different sites, you can
+   write more efficient, reliable and maintainable scripts. The best practices listed here comes
+   from the [BASH Cheat Sheet by bertvv]{https://bertvv.github.io/cheat-sheets/Bash.html} and this document does not contain each one of these best
+   practices, please refer to that website instead, as this is document stores them for convenience.
+
+*** General
+    - Clean code principles apply to BASH.
+    - Always use long parameter notation when available. This makes the script more readable,
+      especially for lesser known/used commands that you don't remember all the options for.
+
+    A few examples:
+    @code bash
+    # Bad
+    rm -rf -- "${dir}"
+
+    # Good
+    rm --recursive --force -- "${dir}"
+    @end
+
+    @code bash
+    # Bad
+    cd "${foo}"
+    # [...]
+    cd ..
+
+    # Good
+    pushd "${foo}"
+    # [...]
+    popd
+    @end
+
+    > *Note*: use `nohup foo | cat &` if `foo` must be started from a terminal and run in the
+      background.
+
+*** Variables
+    - If you ever need global variables, make them readonly by default.
+    - Prefer `local` variables within functions over global variables.
+    - Variables should *always be referred* to in the `${var}` syntax (as opposed to `$var`) in order
+      to improve readability.
+    - Variables should *always be quoted*, especially if their value may contain a *whitespace or
+      separator* character (`"${var}"`).
+    - Capitalization conventions:
+    -- Environment variables: `${ALL_CAPS}`.
+    -- Local variables: `${lower_case}`.
+    - Positional parameters of the script should be checked, those of functions should not.
+    - Some loops happen in subprocesses, so don't be surprised when setting variables does nothing
+      after them. Use `stdout` and `grep` to communicate status.
+
+*** Substitution
+    - Always use `$(command)` for command substitution (as opposed to backquotes (\`\`)).
+    - Prepend a command with `\\` to override alias/builtin lookup, e.g.
+      @code bash
+      $ \time bash -c "apt list --installed | wc -l"
+      5466
+      1.32user 0.12system 0:01.45elapsed 60%CPU
+    @end
+
+*** Output and redirection
+    - [For various reasons]{https://www.in-ulm.de/~mascheck/various/echo+printf/}, `printf` is preferable to `echo`. `printf` gives more control over the output,
+      it's more portable and its behaviour is defined better.
+    - *Print error messages to `stderr`*. e.g.
+      @code bash
+      error() {
+        local red='\e[0;41m'
+        local reset='\e[0;0m'
+        printf "${red}ERROR${reset} %s\\n" "${*}" 1>&2
+      }
+      @end
+    - Name `heredoc` tags with what they're part of, like:
+      @code bash
+      cat <<HELPMSG
+      Usage: $0 [OPTION]... [ARGUMENT]...
+
+      HELPMSG
+      @end
+    - Single-quote `heredocs` leading tag to prevent interpolation of text between them.
+      @code bash
+      cat <<'HELPMSG'
+      Usage: ${0} [OPTION]... [ARGUMENT]...
+
+      HELPMSG
+      @end
+
+*** Functions
+    BASH can be hard to read and interpret. Using functions can greatly improve readability.
+
+    - Describe the usage of each function: number of arguments, return value, output (preferably
+      with comments).
+    - Declare variables with a meaningful name for positional parameters of functions.
+      @code bash
+      # Moves (aka renames) a directory and cd into it
+      function mvc() {
+        local origin="${1}"
+        local destination="${2}"
+        # [...]
+      }
+      @end
+    - Create functions with a meaninful name for complex tests.
+      @code bash
+      # Don't do this
+      if [ "$#" -ge "1" ] && [ "$1" = '-h' ] || [ "$1" = '--help' ] || [ "$1" = "-?" ]; then
+        usage
+        exit 0
+      fi
+
+      # Do this
+      help_wanted() {
+        [ "$#" -ge "1" ] && [ "$1" = '-h' ] || [ "$1" = '--help' ] || [ "$1" = "-?" ]
+      }
+
+      if help_wanted "$@"; then
+        usage
+        exit 0
+      fi
+      @end
+
+*** Writing robust scripts and debugging
+    BASH is not /very/ easy to debug. There's no built-in debugger like you have with other
+    programming languages. By default, undefined variables are interpreted as empty strings (I know,
+    it's not very smart), which can cause problems further down the line. A few tips that may help:
+    - Always check for syntax errors by running the script with `bash -n foo.sh`. It does check the
+      syntax of a BASH script without actually running it.
+    - Abort the script on errors and unbound variables. This is called "strict mode" and you can
+      know the how /and why/ behind it, [here]{https://olivergondza.github.io/2019/10/01/bash-strict-mode.html}.
+    - Use BASH's debug output feature. This will print each statement after applying all forms of
+      substitution (parameter/command substitution, brace expansion, globbing, etc).
+    -- Run the script with `bash -x foo.sh`.
+    -- Put `set -x` at the top of the script.
+    -- If you only want debug output in a specific section of the script, but `set -x` before and
+       `set +x` after the section.
+    - Write lots of log messages to stdout or stderr (depending on the log type) so it's easier to
+      drill down to what part of the script contains problematic code.

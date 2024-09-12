@@ -1,0 +1,123 @@
+@document.meta
+title: packages_management
+description: Packages management on Linux, APT cheatsheet and comparisons with apt-get
+authors: alejandro
+categories: [
+  sysadmin
+  linuxupskillchallenge
+  notes
+]
+created: 2024-09-12T11:16:49-0400
+updated: 2024-09-12T11:16:49-0400
+version: 1.1.1
+@end
+
+* Packages management
+** Package manager options on Debian/Ubuntu
+   Debian and Ubuntu, being closely related distributions, share a common package management
+   infrastructure based on *dpkg* (Debian package). The primary options available are:
+
+*** dpkg
+    `dpkg` is a low-level tool that directly interacts with `.deb` packages. Some of the most used
+    commands for it are the following:
+    @code bash
+    # Install a package
+    dpkg -i package.deb
+
+    # Remove a package
+    dpkg -r package
+
+    # Purge a package (removes both the package and its configuration files)
+    dpkg -P package
+
+    # Lists installed packages
+    dpkg -l
+
+    # Show detailed information about a package
+    dpkg -s package
+
+    # Lists files installed by a package
+    dpkg -L package
+
+    # Unpacks a package without installing it
+    dpkg --unpack package
+
+    # Reconfigures a package
+    dpkg-reconfigure package
+    @end
+
+*** APT
+    `apt` is the standard package manager on both Debian and Ubuntu, providing a user-friendly
+    interface for installing, removing, and updating packages. It is a high-level interface for
+    interacting with packages. Some of the most used commands for it are the following:
+    @code bash
+    # Install a package and its dependencies
+    apt install package1 ...
+
+    # Remove a package
+    apt remove package
+
+    # Remove a package and its configuration files
+    apt purge package
+
+    # Removes automatically installed packages that are no longer needed (i.e. libraries)
+    apt autoremove
+
+    # See the metadata information for a package
+    apt info package
+
+    # Shows the policy for a package
+    apt policy package
+
+    # Search for packages based on a search term
+    apt search term
+
+    # List packages satisfying certain criteria, e.g. `--installed`, `--upgradeable`
+    apt list
+
+    # Update the package repositories information
+    apt update
+
+    # Upgrades installed packages to their latest available versions in the repositories
+    apt upgrade
+
+    # Pins a package to a specific priority
+    apt pin add priority package
+
+    # Unpin a package
+    apt pin remove package
+    @end
+
+    > *Note*: the only commands that does /not/ require root privileges are `apt list`, `apt search`
+      and `apt show`.
+
+** Differences between apt and apt-get
+   `apt` and `apt-get` are both package managers used in Debian-based Linux distributions like
+   Ubuntu. While they share many similarities, there are some key differences:
+
+*** User interface
+    - *apt*: designed to be more user-friendly, offering a more interactive and intuitive
+      experience.
+    - *apt-get*: more command-line oriented, often preferred for scripting and automation.
+
+*** Dependency handling
+    - *apt*: handles dependencies automatically, making it easier for users.
+    - *apt-get*: offers more granular control over dependency handling, but requires more manual
+      intervention.
+
+*** Progress reporting
+    - *apt*: provides more detailed progress reports, making it easier to track the installation or
+      removal process.
+    - *apt-get*: offers less verbose output, which can be beneficial for scripting.
+
+*** Automation
+    - *apt*: both `apt` and `apt-get` can be used for automation scripts. However, `apt`'s more
+      user-friendly interface nature might require additional configuration for scripting.
+    - *apt-get*: its command-line oriented approach and simpler syntax can be advantageous for
+      automation scripts that require minimal interaction.
+
+    That means, `apt-get` *is generally preferred for automation scripts* due to its command-line
+    focus and simpler syntax. It's less intuitive and verbose, and provides more control over the
+    package management process, making it well-suited for automated tasks. Nevertheless, both tools
+    can be used effectively for system administration tasks, depending on your specific needs and
+    preferences.
